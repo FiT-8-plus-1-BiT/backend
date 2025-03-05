@@ -44,13 +44,11 @@ public class CallHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(CallHandler.class);
     private static final Gson gson = new GsonBuilder().create();
 
-    private final ConcurrentHashMap<String, UserSession> viewers = new ConcurrentHashMap<>();
+	private final RoomManager roomManager;
 
-    @Autowired
-    private KurentoClient kurento;
-
-    private MediaPipeline pipeline;
-    private UserSession presenterUserSession;
+	public CallHandler(RoomManager roomManager) {
+		this.roomManager = roomManager;
+	}
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {

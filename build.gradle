@@ -53,3 +53,17 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.register("copyPrivate", Copy) {
+    from("$projectDir/be_sub_module_yml")  // 서브모듈 경로
+    include("*.yml")                    // 복사할 파일 패턴 (*.yml)
+    into("$projectDir/src/main/resources")  // 복사 대상 경로
+}
+
+tasks.named("processResources") {
+    dependsOn("copyPrivate")
+}
+
+tasks.named("build") {
+    dependsOn("copyPrivate")
+}

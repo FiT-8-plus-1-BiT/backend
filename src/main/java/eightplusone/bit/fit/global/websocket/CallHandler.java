@@ -1,249 +1,151 @@
 package eightplusone.bit.fit.global.websocket;
-/*
- * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
+import java.io.IOException;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import org.kurento.client.*;
-import org.kurento.jsonrpc.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.kurento.client.IceCandidate;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
-/**
- * Protocol handler for 1 to N video call communication.
- *
- * @author Boni Garcia (bgarcia@gsyc.es)
- * @since 5.0.0
- */
+import eightplusone.bit.fit.domain.streaming.Room;
+import eightplusone.bit.fit.domain.streaming.RoomManager;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class CallHandler extends TextWebSocketHandler {
+	private static final Gson gson = new Gson();
 
-    private static final Logger log = LoggerFactory.getLogger(CallHandler.class);
-    private static final Gson gson = new GsonBuilder().create();
+	private final RoomManager roomManager;
 
-    private final ConcurrentHashMap<String, UserSession> viewers = new ConcurrentHashMap<>();
+	public CallHandler(RoomManager roomManager) {
+		this.roomManager = roomManager;
+	}
 
-    @Autowired
-    private KurentoClient kurento;
+	@Override
+	public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+		JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
+		log.info("Incoming message from session '{}': {}", session.getId(), jsonMessage);
 
-    private MediaPipeline pipeline;
-    private UserSession presenterUserSession;
+		String roomName = jsonMessage.get("room").getAsString();
+		Room room = roomManager.getRoom(roomName);
+		String messageId = jsonMessage.has("id") ? jsonMessage.get("id").getAsString() : "";
 
-    @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
-        log.debug("Incoming message from session '{}': {}", session.getId(), jsonMessage);
+		switch (messageId) {
+			case "presenter":
+				handlePresenter(session, room, jsonMessage);
+				break;
+			case "viewer":
+				handleViewer(session, room, jsonMessage);
+				break;
+			case "onIceCandidate":
+				handleIceCandidate(session, room, jsonMessage);
+				break;
+			case "stop":
+				handleStop(session, room);
+				break;
+			default:
+				sendError(session, "Invalid message ID");
+				break;
+		}
+	}
 
-        switch (jsonMessage.get("id").getAsString()) {
-            case "presenter":
-                try {
-                    presenter(session, jsonMessage);
-                } catch (Throwable t) {
-                    handleErrorResponse(t, session, "presenterResponse");
-                }
-                break;
-            case "viewer":
-                try {
-                    viewer(session, jsonMessage);
-                } catch (Throwable t) {
-                    handleErrorResponse(t, session, "viewerResponse");
-                }
-                break;
-            case "onIceCandidate": {
-                JsonObject candidate = jsonMessage.get("candidate").getAsJsonObject();
+	private void handlePresenter(WebSocketSession session, Room room, JsonObject jsonMessage) throws
+		IOException,
+		InterruptedException {
+		UserSession presenter = new UserSession(session);
 
-                UserSession user = null;
-                if (presenterUserSession != null) {
-                    if (presenterUserSession.getSession() == session) {
-                        user = presenterUserSession;
-                    } else {
-                        user = viewers.get(session.getId());
-                    }
-                }
-                if (user != null) {
-                    IceCandidate cand =
-                            new IceCandidate(candidate.get("candidate").getAsString(), candidate.get("sdpMid")
-                                    .getAsString(), candidate.get("sdpMLineIndex").getAsInt());
-                    user.addCandidate(cand);
-                }
-                break;
-            }
-            case "stop":
-                stop(session);
-                break;
-            default:
-                break;
-        }
-    }
+		if (room.setPresenter(presenter)) {
+			String sdpOffer = jsonMessage.get("sdpOffer").getAsString();
+			String sdpAnswer = room.processPresenterOffer(sdpOffer);
+			sendResponse(session, "presenterResponse", "accepted", "sdpAnswer", sdpAnswer);
+		} else {
+			sendResponse(session, "presenterResponse", "rejected", "message",
+				"A presenter already exists in this room.");
+		}
+	}
 
-    private void handleErrorResponse(Throwable throwable, WebSocketSession session, String responseId)
-            throws IOException {
-        stop(session);
-        log.error(throwable.getMessage(), throwable);
-        JsonObject response = new JsonObject();
-        response.addProperty("id", responseId);
-        response.addProperty("response", "rejected");
-        response.addProperty("message", throwable.getMessage());
-        session.sendMessage(new TextMessage(response.toString()));
-    }
+	private void handleViewer(WebSocketSession session, Room room, JsonObject jsonMessage) throws IOException {
+		if (!room.hasPresenter()) {
+			sendResponse(session, "viewerResponse", "rejected", "message",
+				"No presenter available in this room.");
+			return;
+		}
 
-    private synchronized void presenter(final WebSocketSession session, JsonObject jsonMessage)
-            throws IOException {
-        if (presenterUserSession == null) {
-            presenterUserSession = new UserSession(session);
+		UserSession viewer = new UserSession(session);
+		if (room.addViewer(viewer)) {
+			String sdpOffer = jsonMessage.get("sdpOffer").getAsString();
+			String sdpAnswer = room.processViewerOffer(viewer, sdpOffer);
+			sendResponse(session, "viewerResponse", "accepted", "sdpAnswer", sdpAnswer);
+		} else {
+			sendResponse(session, "viewerResponse", "rejected");
+		}
+	}
 
-            pipeline = kurento.createMediaPipeline();
-            presenterUserSession.setWebRtcEndpoint(new WebRtcEndpoint.Builder(pipeline).build());
+	private void handleIceCandidate(WebSocketSession session, Room room, JsonObject jsonMessage) {
+		IceCandidate candidate = new IceCandidate(
+			jsonMessage.get("candidate").getAsJsonObject().get("candidate").getAsString(),
+			jsonMessage.get("candidate").getAsJsonObject().get("sdpMid").getAsString(),
+			jsonMessage.get("candidate").getAsJsonObject().get("sdpMLineIndex").getAsInt()
+		);
 
-            WebRtcEndpoint presenterWebRtc = presenterUserSession.getWebRtcEndpoint();
+		if (room.getPresenterUserSession() != null && room.getPresenterUserSession().getSession().equals(session)) {
+			room.getPresenterUserSession().addCandidate(candidate);
+			return;
+		}
 
-            presenterWebRtc.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
+		room.getViewers().stream()
+			.filter(v -> v.getSession().equals(session))
+			.findFirst().ifPresent(user -> user.addCandidate(candidate));
 
-                @Override
-                public void onEvent(IceCandidateFoundEvent event) {
-                    JsonObject response = new JsonObject();
-                    response.addProperty("id", "iceCandidate");
-                    response.add("candidate", JsonUtils.toJsonObject(event.getCandidate()));
-                    try {
-                        synchronized (session) {
-                            session.sendMessage(new TextMessage(response.toString()));
-                        }
-                    } catch (IOException e) {
-                        log.debug(e.getMessage());
-                    }
-                }
-            });
+	}
 
-            String sdpOffer = jsonMessage.getAsJsonPrimitive("sdpOffer").getAsString();
-            String sdpAnswer = presenterWebRtc.processOffer(sdpOffer);
+	private void handleStop(WebSocketSession session, Room room) throws IOException {
+		if (room.getPresenterUserSession() != null && room.getPresenterUserSession().getSession().equals(session)) {
+			room.removePresenter();
+			roomManager.removeRoom(room.getName());
+		} else {
+			room.removeViewer(session.getId());
+		}
+		session.close();
+	}
 
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "presenterResponse");
-            response.addProperty("response", "accepted");
-            response.addProperty("sdpAnswer", sdpAnswer);
+	@Override
+	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+		// 모든 방을 검색하여 해당 세션을 가진 사용자를 삭제
+		for (Room room : roomManager.getAllRooms()) {
+			if (room.getPresenterUserSession() != null && room.getPresenterUserSession().getSession().equals(session)) {
+				room.removePresenter();
+				roomManager.removeRoom(room.getName()); // 발표자가 나가면 방 삭제
+				return;
+			}
+			log.info("Checking if {} is a viewer in room {}", session.getId(), room.getName());
+			room.removeViewer(session.getId());
+		}
+	}
 
-            synchronized (session) {
-                presenterUserSession.sendMessage(response);
-            }
-            presenterWebRtc.gatherCandidates();
+	private void sendResponse(WebSocketSession session, String id, String response) {
+		sendResponse(session, id, response, null, null);
+	}
 
-        } else {
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "presenterResponse");
-            response.addProperty("response", "rejected");
-            response.addProperty("message",
-                    "Another user is currently acting as sender. Try again later ...");
-            session.sendMessage(new TextMessage(response.toString()));
-        }
-    }
+	private void sendResponse(WebSocketSession session, String id, String response, String key, String value) {
+		try {
+			JsonObject json = new JsonObject();
+			json.addProperty("id", id);
+			json.addProperty("response", response);
+			if (key != null && value != null) {
+				json.addProperty(key, value);
+			}
+			session.sendMessage(new TextMessage(gson.toJson(json)));
+		} catch (IOException e) {
+			log.error("Failed to send response to session {}: {}", session.getId(), e.getMessage(), e);
+		}
+	}
 
-    private synchronized void viewer(final WebSocketSession session, JsonObject jsonMessage)
-            throws IOException {
-        if (presenterUserSession == null || presenterUserSession.getWebRtcEndpoint() == null) {
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "viewerResponse");
-            response.addProperty("response", "rejected");
-            response.addProperty("message",
-                    "No active sender now. Become sender or . Try again later ...");
-            session.sendMessage(new TextMessage(response.toString()));
-        } else {
-            if (viewers.containsKey(session.getId())) {
-                JsonObject response = new JsonObject();
-                response.addProperty("id", "viewerResponse");
-                response.addProperty("response", "rejected");
-                response.addProperty("message", "You are already viewing in this session. "
-                        + "Use a different browser to add additional viewers.");
-                session.sendMessage(new TextMessage(response.toString()));
-                return;
-            }
-            UserSession viewer = new UserSession(session);
-            viewers.put(session.getId(), viewer);
-
-            WebRtcEndpoint nextWebRtc = new WebRtcEndpoint.Builder(pipeline).build();
-
-            nextWebRtc.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
-
-                @Override
-                public void onEvent(IceCandidateFoundEvent event) {
-                    JsonObject response = new JsonObject();
-                    response.addProperty("id", "iceCandidate");
-                    response.add("candidate", JsonUtils.toJsonObject(event.getCandidate()));
-                    try {
-                        synchronized (session) {
-                            session.sendMessage(new TextMessage(response.toString()));
-                        }
-                    } catch (IOException e) {
-                        log.debug(e.getMessage());
-                    }
-                }
-            });
-
-            viewer.setWebRtcEndpoint(nextWebRtc);
-            presenterUserSession.getWebRtcEndpoint().connect(nextWebRtc);
-            String sdpOffer = jsonMessage.getAsJsonPrimitive("sdpOffer").getAsString();
-            String sdpAnswer = nextWebRtc.processOffer(sdpOffer);
-
-            JsonObject response = new JsonObject();
-            response.addProperty("id", "viewerResponse");
-            response.addProperty("response", "accepted");
-            response.addProperty("sdpAnswer", sdpAnswer);
-
-            synchronized (session) {
-                viewer.sendMessage(response);
-            }
-            nextWebRtc.gatherCandidates();
-        }
-    }
-
-    private synchronized void stop(WebSocketSession session) throws IOException {
-        String sessionId = session.getId();
-        if (presenterUserSession != null && presenterUserSession.getSession().getId().equals(sessionId)) {
-            for (UserSession viewer : viewers.values()) {
-                JsonObject response = new JsonObject();
-                response.addProperty("id", "stopCommunication");
-                viewer.sendMessage(response);
-            }
-
-            log.info("Releasing media pipeline");
-            if (pipeline != null) {
-                pipeline.release();
-            }
-            pipeline = null;
-            presenterUserSession = null;
-        } else if (viewers.containsKey(sessionId)) {
-            if (viewers.get(sessionId).getWebRtcEndpoint() != null) {
-                viewers.get(sessionId).getWebRtcEndpoint().release();
-            }
-            viewers.remove(sessionId);
-        }
-    }
-
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        stop(session);
-    }
-
+	private void sendError(WebSocketSession session, String errorMessage) {
+		sendResponse(session, "error", "rejected", "message", errorMessage);
+	}
 }

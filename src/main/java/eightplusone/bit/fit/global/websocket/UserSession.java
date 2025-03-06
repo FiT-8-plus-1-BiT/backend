@@ -65,4 +65,13 @@ public class UserSession {
     public void addCandidate(IceCandidate candidate) {
         webRtcEndpoint.addIceCandidate(candidate);
     }
+
+    public void close() throws IOException {
+        if (webRtcEndpoint != null) {
+            webRtcEndpoint.release();
+        }
+        if (session.isOpen()) {
+            session.close();
+        }
+    }
 }

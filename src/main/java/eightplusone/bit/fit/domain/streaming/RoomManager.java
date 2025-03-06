@@ -1,4 +1,4 @@
-package eightplusone.bit.fit.domain.streamingRoom;
+package eightplusone.bit.fit.domain.streaming;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;

@@ -11,8 +11,8 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-import eightplusone.bit.fit.domain.streamingRoom.Room;
-import eightplusone.bit.fit.domain.streamingRoom.RoomManager;
+import eightplusone.bit.fit.domain.streaming.Room;
+import eightplusone.bit.fit.domain.streaming.RoomManager;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

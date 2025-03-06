@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CustomOAuth2User implements OAuth2User {
 
-	private final OAuth2UserDto OAuth2UserDto;
+	private final OAuth2UserDto oAuth2UserDto;
 
 	@Override
 	public Map<String, Object> getAttributes() {
@@ -22,12 +22,12 @@ public class CustomOAuth2User implements OAuth2User {
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		Collection<GrantedAuthority> collection = new ArrayList<>();
-		collection.add((GrantedAuthority)() -> OAuth2UserDto.getRole().getKey());
+		collection.add((GrantedAuthority)() -> oAuth2UserDto.getRole().getKey());
 		return collection;
 	}
 
 	@Override
 	public String getName() {
-		return OAuth2UserDto.getEmail();
+		return oAuth2UserDto.getEmail();
 	}
 }

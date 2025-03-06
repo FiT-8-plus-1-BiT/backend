@@ -13,8 +13,8 @@ public class RedisTokenService {
 
 	private final RedisTemplate<String, String> redisTemplate;
 
-	public final String REFRESH_PREFIX = "RT:";
-	private final String OAUTH2_PREFIX = "AT:";
+	private static final String REFRESH_PREFIX = "RT:";
+	private static final String OAUTH2_PREFIX = "AT:";
 
 	public void saveRefreshToken(String loginId, String refreshToken, long refreshTokenExpirationSeconds) {
 		redisTemplate.opsForValue()

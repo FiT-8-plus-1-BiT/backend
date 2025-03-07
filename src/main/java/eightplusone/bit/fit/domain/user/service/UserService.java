@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import eightplusone.bit.fit.domain.auth.service.OAuth2UnlinkService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
+import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -21,16 +22,17 @@ public class UserService {
 	@Transactional
 	public void delete() {
 		String email = SecurityContextHolder.getContext().getAuthentication().getName();
-		userRepository.deleteByEmail(email);
-		deleteOauth2AccessToken(email);
+		User user = userRepository.findLoginUserByEmail(email);
+		userRepository.delete(user);
+		deleteOauth2AccessToken(user.getProvider());
 	}
 
-	private void deleteOauth2AccessToken(String email) {
-		if (email.startsWith("kakao") || email.startsWith("google") || email.startsWith("naver")) {
-			oAuth2UnlinkService.unlink(email);
+	private void deleteOauth2AccessToken(String provider) {
+		if (provider.startsWith("kakao") || provider.startsWith("google") || provider.startsWith("naver")) {
+			oAuth2UnlinkService.unlink(provider);
 		}
-		if (redisTokenService.getOauth2AccessToken(email) != null) {
-			redisTokenService.deleteOauth2AccessToken(email);
+		if (redisTokenService.getOauth2AccessToken(provider) != null) {
+			redisTokenService.deleteOauth2AccessToken(provider);
 		}
 	}
 }

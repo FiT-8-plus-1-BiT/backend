@@ -56,9 +56,9 @@ public class SecurityConfig {
 			.cors(corsCustomizer -> corsCustomizer.configurationSource(request -> {
 				CorsConfiguration configuration = new CorsConfiguration();
 				configuration.setAllowedOrigins(Collections.singletonList(allowedOrigins));
-				configuration.setAllowedMethods(Collections.singletonList(ALLOWED_METHODS));
+				configuration.setAllowedMethods(ALLOWED_METHODS);
 				configuration.setAllowCredentials(ALLOWED_CREDENTIALS);
-				configuration.setAllowedHeaders(Collections.singletonList(ALLOWED_HEADERS));
+				configuration.setAllowedHeaders(ALLOWED_HEADERS);
 				configuration.setMaxAge(MAX_AGE);
 				configuration.setExposedHeaders(Collections.singletonList(HttpHeaders.SET_COOKIE));
 				configuration.setExposedHeaders(Collections.singletonList(HttpHeaders.AUTHORIZATION));

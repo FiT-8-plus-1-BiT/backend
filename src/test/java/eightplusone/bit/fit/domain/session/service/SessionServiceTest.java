@@ -82,4 +82,32 @@ class SessionServiceTest {
 		assertThat(result.get(123L)).containsEntry("percent", 20.0);
 	}
 
+	@Test
+	void updateAndBroadcastIfChanged() {
+		// Given
+		Long sessionId = 123L;
+		double percent = 100.0;
+		String currentLevel = "여유"; // 기존 값
+		String newLevel = "혼잡"; // 예상값 (변경됨)
+		Session session = new Session();
+		setField(session, "sessionId", 123L);
+		setField(session, "standardCount", 5);
+
+		when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+		when(hashOperations.get("session_congestion", sessionId)).thenReturn(currentLevel);
+		when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+		when(hashOperations.values("session_user")).thenReturn(List.of("123", "123", "123", "123", "123"));
+
+		// When
+		sessionService.updateAndBroadcastIfChanged(sessionId);
+
+		// Then
+		verify(hashOperations).put("session_congestion", sessionId, newLevel);
+		verify(redisTemplate).convertAndSend(eq("/sub/ws-room"), argThat(message -> {
+			Map<String, Object> msg = (Map<String, Object>)message;
+			return msg.get("sessionId").equals(sessionId) &&
+				msg.get("percent").equals(percent) &&
+				msg.get("level").equals(newLevel);
+		}));
+	}
 }

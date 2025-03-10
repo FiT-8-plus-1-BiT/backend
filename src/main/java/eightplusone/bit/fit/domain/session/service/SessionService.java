@@ -38,7 +38,7 @@ public class SessionService {
 	// 혼잡도 전송
 	public Map<Long, Map<String, Object>> getUpdatedSessionData() {
 		List<Session> sessions = sessionRepository.findAll();
-		HashOperations<String, Long, String> hashOps = redisTemplate.opsForHash();
+		HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
 
 		return sessions.stream()
 			.collect(Collectors.toMap(
@@ -47,7 +47,7 @@ public class SessionService {
 					double percent = getCongestionPercent(session.getSessionId());
 					String level = getCongestionLevel(percent);
 
-					hashOps.put(SESSION_CONGESTION_KEY, session.getSessionId(), level);
+					hashOps.put(SESSION_CONGESTION_KEY, session.getSessionId().toString(), level);
 
 					return Map.of("percent", percent, "level", level);
 				}
@@ -77,7 +77,7 @@ public class SessionService {
 
 	// 혼잡도 변경 시 -> 스트리밍쪽에서 설정
 	public void updateAndBroadcastIfChanged(Long sessionId) {
-		HashOperations<String, Long, String> hashOps = redisTemplate.opsForHash();
+		HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
 
 		double percent = getCongestionPercent(sessionId);
 		String newLevel = getCongestionLevel(percent);
@@ -85,7 +85,7 @@ public class SessionService {
 		String previousLevel = hashOps.get(SESSION_CONGESTION_KEY, sessionId);
 
 		if (!newLevel.equals(previousLevel)) {
-			hashOps.put(SESSION_CONGESTION_KEY, sessionId, newLevel);
+			hashOps.put(SESSION_CONGESTION_KEY, sessionId.toString(), newLevel);
 			redisTemplate.convertAndSend("/sub/ws-room", Map.of(
 				"sessionId", sessionId,
 				"percent", percent,

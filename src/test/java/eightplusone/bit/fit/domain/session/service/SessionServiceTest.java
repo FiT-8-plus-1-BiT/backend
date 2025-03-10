@@ -48,7 +48,7 @@ class SessionServiceTest {
 		sessionService.checkIn(userId);
 
 		// Then
-		verify(hashOperations).put("session_user", userId, "null");
+		verify(hashOperations).put("session_user", userId.toString(), "null");
 	}
 
 	@Test
@@ -60,25 +60,26 @@ class SessionServiceTest {
 		sessionService.checkOut(userId);
 
 		// Then
-		verify(hashOperations).delete("session_user", userId);
+		verify(hashOperations).delete("session_user", userId.toString());
 	}
 
 	@Test
 	void getUpdatedSessionData() {
-		// Given
 		Session session = new Session();
 		setField(session, "sessionId", 123L);
 		setField(session, "standardCount", 10);
 
 		when(sessionRepository.findAll()).thenReturn(List.of(session));
 		when(sessionRepository.findById(123L)).thenReturn(Optional.of(session));
-		when(hashOperations.entries("session_user")).thenReturn(Map.of(1L, 123L, 2L, 123L)); // 2명이 같은 세션에 접속 중
 
-		// When
+		when(hashOperations.values("session_user")).thenReturn(List.of("123", "123")); // 2명 접속
+
+		when(redisTemplate.opsForHash()).thenReturn(hashOperations);
+
 		Map<Long, Map<String, Object>> result = sessionService.getUpdatedSessionData();
 
-		// Then
 		assertThat(result).containsKey(123L);
-		assertThat(result.get(123L)).containsEntry("percent", 20.0); // 2/10 * 100 = 20%
+		assertThat(result.get(123L)).containsEntry("percent", 20.0);
 	}
+
 }

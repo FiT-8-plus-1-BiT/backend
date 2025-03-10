@@ -102,7 +102,7 @@ class SessionServiceTest {
 		sessionService.updateAndBroadcastIfChanged(sessionId);
 
 		// Then
-		verify(hashOperations).put("session_congestion", sessionId, newLevel);
+		verify(hashOperations).put("session_congestion", sessionId.toString(), newLevel);
 		verify(redisTemplate).convertAndSend(eq("/sub/ws-room"), argThat(message -> {
 			Map<String, Object> msg = (Map<String, Object>)message;
 			return msg.get("sessionId").equals(sessionId) &&

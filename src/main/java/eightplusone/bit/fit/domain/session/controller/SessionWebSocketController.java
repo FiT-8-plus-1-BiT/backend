@@ -8,9 +8,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eightplusone.bit.fit.domain.session.service.SessionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class SessionWebSocketController {
 
 	private final SimpMessagingTemplate messagingTemplate;
@@ -19,7 +21,7 @@ public class SessionWebSocketController {
 	@Scheduled(fixedRate = 10000)
 	public void broadcastSessionUpdate() {
 		Map<Long, Map<String, Object>> sessionData = sessionService.getUpdatedSessionData();
-		System.out.println("업데이트 전송" + sessionData);
-		messagingTemplate.convertAndSend("/sub/session", sessionData);
+		log.info("send congestion data : {}", sessionData.toString());
+		messagingTemplate.convertAndSend("/sub/ws-room", sessionData);
 	}
 }

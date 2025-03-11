@@ -35,4 +35,7 @@ public class Session {
 
 	@Column(nullable = false)
 	private Integer standardCount;
+
+	@Column(nullable = false)
+	private Integer number;
 }

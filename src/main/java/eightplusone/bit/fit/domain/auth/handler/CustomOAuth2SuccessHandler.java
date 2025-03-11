@@ -50,7 +50,7 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
 		response.addHeader(HttpHeaders.SET_COOKIE,
 			CookieUtil.createCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken,
 				tokenProvider.getRefreshTokenExpirationSeconds()).toString());
-		response.sendRedirect(allowedOrigins + "/main"); //TODO: 이후 프론트 측 에서 원하는 경로로 수정 할 것.
+		response.sendRedirect(allowedOrigins + "/main");
 		log.info("{}-{}: login ({})", email, role, new Date());
 	}
 }

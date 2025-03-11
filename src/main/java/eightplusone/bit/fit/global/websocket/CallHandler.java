@@ -1,5 +1,8 @@
 package eightplusone.bit.fit.global.websocket;
 
+import static eightplusone.bit.fit.global.constants.TokenConstant.*;
+import static org.springframework.http.HttpHeaders.*;
+
 import java.io.IOException;
 
 import org.kurento.client.IceCandidate;
@@ -11,8 +14,10 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import eightplusone.bit.fit.domain.auth.jwt.TokenProvider;
 import eightplusone.bit.fit.domain.streaming.Room;
 import eightplusone.bit.fit.domain.streaming.RoomManager;
+import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -20,9 +25,11 @@ public class CallHandler extends TextWebSocketHandler {
 	private static final Gson gson = new Gson();
 
 	private final RoomManager roomManager;
+	private final TokenProvider tokenProvider;
 
-	public CallHandler(RoomManager roomManager) {
+	public CallHandler(RoomManager roomManager, TokenProvider tokenProvider) {
 		this.roomManager = roomManager;
+		this.tokenProvider = tokenProvider;
 	}
 
 	@Override
@@ -30,21 +37,48 @@ public class CallHandler extends TextWebSocketHandler {
 		JsonObject jsonMessage = gson.fromJson(message.getPayload(), JsonObject.class);
 		log.info("Incoming message from session '{}': {}", session.getId(), jsonMessage);
 
+		String userId = (String)session.getAttributes().get("userId");
+
+		if (jsonMessage.get("id").getAsString().equals(AUTHORIZATION)) {
+			String accessToken = jsonMessage.get("accessToken").getAsString().substring(BEARER_PREFIX.length());
+
+			if (tokenProvider.validateAccessToken(accessToken)) {
+				Claims claims = tokenProvider.getClaimsByAccessToken(accessToken);
+				session.getAttributes().put("userId", claims.getSubject());
+				sendResponse(session, AUTHORIZATION, "success");
+				log.info("User '{}' has been authenticated and stored for streaming access.", claims.getSubject());
+			} else {
+				sendError(session, "Invalid access accessToken");
+				session.close();
+			}
+			return;
+		}
+
+		if (userId == null) {
+			sendError(session, "Unauthorized access - userId missing");
+			session.close();
+			return;
+		}
+
 		String roomName = jsonMessage.get("room").getAsString();
 		Room room = roomManager.getRoom(roomName);
 		String messageId = jsonMessage.has("id") ? jsonMessage.get("id").getAsString() : "";
 
 		switch (messageId) {
 			case "presenter":
+				log.info("User '{}' attempting to present in room '{}'", userId, room.getName());
 				handlePresenter(session, room, jsonMessage);
 				break;
 			case "viewer":
+				log.info("User '{}' attempting to join as viewer in room '{}'", userId, room.getName());
 				handleViewer(session, room, jsonMessage);
 				break;
 			case "onIceCandidate":
+				log.info("User '{}' sending ICE candidate in room '{}'", userId, room.getName());
 				handleIceCandidate(session, room, jsonMessage);
 				break;
 			case "stop":
+				log.info("User '{}' stopping session in room '{}'", userId, room.getName());
 				handleStop(session, room);
 				break;
 			default:

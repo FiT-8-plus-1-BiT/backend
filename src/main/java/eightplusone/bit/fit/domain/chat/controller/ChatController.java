@@ -28,7 +28,7 @@ public class ChatController {
 
 	// Redis로 발행
 	@MessageMapping("/sendMessage")
-	public void sendMessage(@Payload ChatMessageDto message, @RequestHeader("User-Id") Long userId) {
+	public void sendMessage(@Payload ChatMessageDto message, @RequestHeader("User-Id") String userId) {
 		log.info("✅ WebSocket 메시지 수신: {}", message);
 		chatService.sendMessage(message, userId);
 	}

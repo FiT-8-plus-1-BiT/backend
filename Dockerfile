@@ -1,12 +1,12 @@
 # 빌드 단계 (JAR 생성)
-FROM --platform=linux/amd64 openjdk:17-jdk-slim AS build
+FROM openjdk:17-jdk-slim AS build
 
 WORKDIR /app
 ARG JAR_FILE=build/libs/*.jar
 COPY ${JAR_FILE} app.jar
 
 # 실행 단계 (최적화된 컨테이너)
-FROM --platform=linux/amd64 openjdk:17-jdk-slim
+FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 

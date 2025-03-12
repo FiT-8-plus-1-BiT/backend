@@ -11,6 +11,8 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import eightplusone.bit.fit.global.exception.CustomException;
+import eightplusone.bit.fit.global.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -38,15 +40,15 @@ public class OAuth2UnlinkService {
 		} else if (provider.startsWith("naver")) {
 			naverUnlink(provider);
 		} else {
-			throw new IllegalStateException("허용되지 않은 소셜 로그인 제공자");
+			throw new CustomException(ErrorCode.INVALID_REQUEST);
 		}
 	}
-	
+
 	private void googleUnlink(String provider) {
 		String accessToken = redisTokenService.getOauth2AccessToken(provider);
 		// oauth2 토큰이 만료 시 재 로그인
 		if (accessToken == null) {
-			throw new IllegalStateException("소셜 로그인 토큰 만료, 재로그인 필요");
+			throw new CustomException(ErrorCode.EXPIRED_AUTH_TOKEN);
 		}
 		// 바디 설정
 		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -58,7 +60,7 @@ public class OAuth2UnlinkService {
 		String accessToken = redisTokenService.getOauth2AccessToken(provider);
 		// oauth2 토큰이 만료 시 재 로그인
 		if (accessToken == null) {
-			throw new IllegalStateException("소셜 로그인 토큰 만료, 재로그인 필요");
+			throw new CustomException(ErrorCode.EXPIRED_AUTH_TOKEN);
 		}
 		HttpHeaders headers = new HttpHeaders();
 		headers.setBearerAuth(accessToken);
@@ -71,7 +73,7 @@ public class OAuth2UnlinkService {
 		String accessToken = redisTokenService.getOauth2AccessToken(provider);
 
 		if (accessToken == null) {
-			throw new IllegalStateException("소셜 로그인 토큰 만료, 재로그인 필요");
+			throw new CustomException(ErrorCode.EXPIRED_AUTH_TOKEN);
 		}
 
 		String url = NAVER_URL
@@ -87,7 +89,7 @@ public class OAuth2UnlinkService {
 		NaverUnlinkResponse response = restTemplate.getForObject(url, NaverUnlinkResponse.class);
 
 		if (response != null && !"success".equalsIgnoreCase(response.getResult())) {
-			throw new IllegalStateException("소셜 로그인 연결 끊기 실패");
+			throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
 		}
 	}
 

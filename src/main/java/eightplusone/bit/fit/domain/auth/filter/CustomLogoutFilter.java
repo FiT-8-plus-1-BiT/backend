@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.util.Date;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.GenericFilterBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eightplusone.bit.fit.domain.auth.jwt.TokenProvider;
+import eightplusone.bit.fit.global.dto.ResponseDto;
 import eightplusone.bit.fit.global.utils.CookieUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -62,7 +64,8 @@ public class CustomLogoutFilter extends GenericFilterBean {
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setCharacterEncoding("utf-8");
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		response.getWriter().write(objectMapper.writeValueAsString(null));
+		response.getWriter()
+			.write(objectMapper.writeValueAsString(ResponseDto.success(HttpStatus.OK, "로그아웃 성공", null)));
 	}
 }
 

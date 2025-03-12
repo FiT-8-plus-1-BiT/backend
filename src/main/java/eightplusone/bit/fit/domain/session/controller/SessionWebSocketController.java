@@ -20,7 +20,7 @@ public class SessionWebSocketController {
 
 	@Scheduled(fixedRate = 30000)
 	public void broadcastSessionUpdate() {
-		Map<Long, Map<String, Object>> sessionData = sessionService.getUpdatedSessionData();
+		Map<Integer, Map<String, Object>> sessionData = sessionService.getUpdatedSessionData();
 		log.info("send congestion data : {}", sessionData.toString());
 		messagingTemplate.convertAndSend("/sub/ws-room", sessionData);
 	}

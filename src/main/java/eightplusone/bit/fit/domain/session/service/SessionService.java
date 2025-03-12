@@ -25,29 +25,29 @@ public class SessionService {
 
 	// TODO: User ID 매개변수 부분 -> 토큰으로 수정
 	// 체크인 시 레디스에 저장
-	public void checkIn(Long userId) {
-		redisTemplate.opsForHash().put(SESSION_USER_KEY, String.valueOf(userId), "null");
+	public void checkIn(String email) {
+		redisTemplate.opsForHash().put(SESSION_USER_KEY, email, "null");
 	}
 
 	// TODO: User ID 매개변수 부분 -> 토큰으로 수정
 	// 체크아웃 시 레디스에서 삭제
-	public void checkOut(Long userId) {
-		redisTemplate.opsForHash().delete(SESSION_USER_KEY, String.valueOf(userId));
+	public void checkOut(String email) {
+		redisTemplate.opsForHash().delete(SESSION_USER_KEY, email);
 	}
 
 	// 혼잡도 전송
-	public Map<Long, Map<String, Object>> getUpdatedSessionData() {
+	public Map<Integer, Map<String, Object>> getUpdatedSessionData() {
 		List<Session> sessions = sessionRepository.findAll();
 		HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
 
 		return sessions.stream()
 			.collect(Collectors.toMap(
-				Session::getSessionId,
+				Session::getAudioChannel,
 				session -> {
-					double percent = getCongestionPercent(session.getSessionId());
+					double percent = getCongestionPercent(session.getAudioChannel());
 					String level = getCongestionLevel(percent);
 
-					hashOps.put(SESSION_CONGESTION_KEY, session.getSessionId().toString(), level);
+					hashOps.put(SESSION_CONGESTION_KEY, session.getAudioChannel().toString(), level);
 
 					return Map.of("percent", percent, "level", level);
 				}
@@ -55,14 +55,14 @@ public class SessionService {
 	}
 
 	// 혼잡도 퍼센트
-	private double getCongestionPercent(Long sessionId) {
-		Session session = sessionRepository.findById(sessionId)
-			.orElseThrow(() -> new EntityNotFoundException(sessionId + "에 해당하는 세션을 찾을 수 없습니다."));
+	private double getCongestionPercent(Integer audioChannel) {
+		Session session = sessionRepository.findByAudioChannel(audioChannel)
+			.orElseThrow(() -> new EntityNotFoundException(audioChannel + "에 해당하는 세션을 찾을 수 없습니다."));
 
 		long connectedUsers = redisTemplate.opsForHash()
 			.values(SESSION_USER_KEY)
 			.stream()
-			.filter(value -> sessionId.toString().equals(value.toString()))
+			.filter(value -> audioChannel.toString().equals(value.toString()))
 			.count();
 
 		Integer standardCnt = session.getStandardCount();
@@ -76,18 +76,18 @@ public class SessionService {
 	}
 
 	// 혼잡도 변경 시 -> 스트리밍쪽에서 설정
-	public void updateAndBroadcastIfChanged(Long sessionId) {
+	public void updateAndBroadcastIfChanged(Integer audioChannel) {
 		HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
 
-		double percent = getCongestionPercent(sessionId);
+		double percent = getCongestionPercent(audioChannel);
 		String newLevel = getCongestionLevel(percent);
 
-		String previousLevel = hashOps.get(SESSION_CONGESTION_KEY, sessionId);
+		String previousLevel = hashOps.get(SESSION_CONGESTION_KEY, audioChannel);
 
 		if (!newLevel.equals(previousLevel)) {
-			hashOps.put(SESSION_CONGESTION_KEY, sessionId.toString(), newLevel);
+			hashOps.put(SESSION_CONGESTION_KEY, audioChannel.toString(), newLevel);
 			redisTemplate.convertAndSend("/sub/ws-room", Map.of(
-				"sessionId", sessionId,
+				"sessionId", audioChannel,
 				"percent", percent,
 				"level", newLevel
 			));

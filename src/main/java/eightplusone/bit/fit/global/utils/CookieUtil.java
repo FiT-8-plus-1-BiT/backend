@@ -2,6 +2,8 @@ package eightplusone.bit.fit.global.utils;
 
 import org.springframework.http.ResponseCookie;
 
+import eightplusone.bit.fit.global.exception.CustomException;
+import eightplusone.bit.fit.global.exception.ErrorCode;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -25,6 +27,6 @@ public final class CookieUtil {
 				}
 			}
 		}
-		throw new NullPointerException(name + " 쿠키를 찾을 수 없습니다.");
+		throw new CustomException(ErrorCode.INVALID_REQUEST);
 	}
 }

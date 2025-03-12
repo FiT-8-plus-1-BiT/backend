@@ -20,6 +20,7 @@ import eightplusone.bit.fit.domain.auth.dto.CustomUserDetails;
 import eightplusone.bit.fit.domain.auth.service.CustomUserDetailsService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
 import eightplusone.bit.fit.domain.user.entity.User;
+import eightplusone.bit.fit.global.exception.CustomException;
 import eightplusone.bit.fit.support.fixture.UserFixture;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -428,7 +429,7 @@ class TokenProviderTest {
 
 		// when & then
 		assertThatThrownBy(() -> tokenProvider.getClaimsByAccessToken(invalidToken))
-			.isInstanceOf(IllegalArgumentException.class);
+			.isInstanceOf(CustomException.class);
 	}
 
 	private Claims parseTokenSubject(String token, String secretKey) {

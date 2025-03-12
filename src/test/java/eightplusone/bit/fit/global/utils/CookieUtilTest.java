@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseCookie;
 
+import eightplusone.bit.fit.global.exception.CustomException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -63,8 +64,8 @@ class CookieUtilTest {
 		when(request.getCookies()).thenReturn(mockCookies);
 
 		assertThatThrownBy(() -> CookieUtil.findCookieByName(request, COOKIE_NAME))
-			.isInstanceOf(NullPointerException.class)
-			.hasMessageContaining(COOKIE_NAME + " 쿠키를 찾을 수 없습니다.");
+			.isInstanceOf(CustomException.class)
+			.hasMessageContaining("잘못된 요청입니다.");
 	}
 
 	@Test
@@ -76,7 +77,7 @@ class CookieUtilTest {
 
 		// when & then
 		assertThatThrownBy(() -> CookieUtil.findCookieByName(request, COOKIE_NAME))
-			.isInstanceOf(NullPointerException.class)
-			.hasMessageContaining(COOKIE_NAME + " 쿠키를 찾을 수 없습니다.");
+			.isInstanceOf(CustomException.class)
+			.hasMessageContaining("잘못된 요청입니다.");
 	}
 }

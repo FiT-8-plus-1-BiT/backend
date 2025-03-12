@@ -12,6 +12,7 @@ import org.kurento.client.Continuation;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
 
+import eightplusone.bit.fit.domain.session.service.SessionService;
 import eightplusone.bit.fit.global.websocket.UserSession;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +27,12 @@ public class Room implements Closeable {
 	@Getter
 	private UserSession presenterUserSession; // 발표자 (1명)
 
-	public Room(String roomName, MediaPipeline pipeline) {
+	private final SessionService sessionService;
+
+	public Room(String roomName, MediaPipeline pipeline, SessionService sessionService) {
 		this.name = roomName;
 		this.pipeline = pipeline;
+		this.sessionService = sessionService;
 		log.info("ROOM {} has been created", roomName);
 	}
 
@@ -58,7 +62,7 @@ public class Room implements Closeable {
 		return false;
 	}
 
-	public synchronized boolean addViewer(UserSession viewer) {
+	public synchronized boolean addViewer(UserSession viewer, String roomName) {
 		if (this.presenterUserSession == null) {
 			return false; // 발표자가 있어야만 시청자가 참가 가능
 		}
@@ -79,14 +83,17 @@ public class Room implements Closeable {
 		log.info("Viewer {} connected to presenter in room {}", viewer.getSession().getId(), name);
 		viewers.put(viewer.getSession().getId(), viewer);
 		log.info("현재 viewer 수: {}", viewers.size());
+
+		sessionService.updateAndBroadcastIfChanged(Integer.valueOf(roomName));
 		return true;
 	}
 
-	public synchronized void removeViewer(String sessionId) {
+	public synchronized void removeViewer(String sessionId, String roomName) {
 		if (viewers.containsKey(sessionId)) {
 			viewers.remove(sessionId);
 			log.info("Viewer {} removed from room {}", sessionId, name);
 			log.info("현재 viewer 수: {}", viewers.size());
+			sessionService.updateAndBroadcastIfChanged(Integer.valueOf(roomName));
 		} else {
 			log.warn("Viewer {} not found in room {}", sessionId, name);
 		}

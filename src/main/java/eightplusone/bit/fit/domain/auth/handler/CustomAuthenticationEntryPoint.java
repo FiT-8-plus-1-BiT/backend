@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eightplusone.bit.fit.global.dto.ResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		response.setCharacterEncoding("utf-8");
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		response.getWriter().write(objectMapper.writeValueAsString("잘못된 접근 입니다."));
+		response.getWriter().write(objectMapper.writeValueAsString(
+			ResponseDto.fail(HttpStatus.UNAUTHORIZED, "잘못된 접근 입니다.")));
 	}
 }

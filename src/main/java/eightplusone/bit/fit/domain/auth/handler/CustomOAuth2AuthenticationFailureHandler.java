@@ -25,6 +25,6 @@ public class CustomOAuth2AuthenticationFailureHandler implements AuthenticationF
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 		AuthenticationException exception) throws IOException {
 		String errorMessage = URLEncoder.encode("social_login_duplicate", StandardCharsets.UTF_8);
-		response.sendRedirect(allowedOrigins + "?error=" + errorMessage);
+		response.sendRedirect(allowedOrigins + "/signup" + "?error=" + errorMessage);
 	}
 }

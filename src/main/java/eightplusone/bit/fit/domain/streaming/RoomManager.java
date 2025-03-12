@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.kurento.client.KurentoClient;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import eightplusone.bit.fit.domain.session.service.SessionService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -14,6 +15,9 @@ public class RoomManager {
 
 	@Autowired
 	private KurentoClient kurento;
+
+	@Autowired
+	private SessionService sessionService;
 
 	private final ConcurrentMap<String, Room> rooms = new ConcurrentHashMap<>();
 
@@ -23,7 +27,7 @@ public class RoomManager {
 
 		if (room == null) {
 			log.info("Room {} not found. Creating new room.", roomName);
-			room = new Room(roomName, kurento.createMediaPipeline());
+			room = new Room(roomName, kurento.createMediaPipeline(), sessionService);
 			rooms.put(roomName, room);
 		}
 

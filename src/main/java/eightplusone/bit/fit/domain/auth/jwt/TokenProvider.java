@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import eightplusone.bit.fit.domain.auth.dto.CustomUserDetails;
 import eightplusone.bit.fit.domain.auth.service.CustomUserDetailsService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
+import eightplusone.bit.fit.global.exception.CustomException;
+import eightplusone.bit.fit.global.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -124,7 +126,9 @@ public class TokenProvider {
 			return e.getClaims();
 		} catch (JwtException e) {
 			log.error("잘못된 jwt 토큰입니다. {}", e.getMessage());
-			throw new IllegalArgumentException("잘못된 jwt 토큰 입니다.");
+			throw new CustomException(ErrorCode.INVALID_AUTH_TOKEN);
+		} catch (Exception e) {
+			throw new CustomException(ErrorCode.INVALID_AUTH_TOKEN);
 		}
 	}
 

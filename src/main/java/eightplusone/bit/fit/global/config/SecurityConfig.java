@@ -57,7 +57,7 @@ public class SecurityConfig {
 			.cors(corsCustomizer -> corsCustomizer.configurationSource(request -> {
 				CorsConfiguration configuration = new CorsConfiguration();
 				configuration.setAllowedOrigins(
-					List.of("https://jiangxy.github.io", "http://localhost:3000")); // TODO : 혼잡도 구현 끝날 경우 원본으로 되돌리기
+					List.of("https://jiangxy.github.io", "http://localhost:5173")); // TODO : 혼잡도 구현 끝날 경우 원본으로 되돌리기
 				configuration.setAllowedMethods(ALLOWED_METHODS);
 				configuration.setAllowCredentials(ALLOWED_CREDENTIALS);
 				configuration.setAllowedHeaders(ALLOWED_HEADERS);
@@ -90,7 +90,8 @@ public class SecurityConfig {
 				.anyRequest()
 				.permitAll() // 모든 요청 허용
 			)
-			.addFilterAfter(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
+			.addFilterAfter(new JwtAuthenticationFilter(tokenProvider, objectMapper),
+				UsernamePasswordAuthenticationFilter.class)
 			.addFilterBefore(new CustomLogoutFilter(tokenProvider, objectMapper), LogoutFilter.class)
 			.oauth2Login((oauth2) -> oauth2.userInfoEndpoint(
 					(userInfoEndpointConfig -> userInfoEndpointConfig.userService(customOAuth2UserService)))

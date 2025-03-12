@@ -11,18 +11,21 @@ public enum ApiEndpoint {
 		"/swagger-ui/**",
 		"/actuator/**",
 		"/v3/**",
+		"/call"
 	}),
 
 	PUBLIC_POST(HttpMethod.POST, new String[] {
 		"/api/v1/auth/reissue",
-		"/api/v1/auth/token-exchange"
+		"/api/v1/auth/token-exchange",
 	}),
 
 	AUTHENTICATED_GET(HttpMethod.GET, new String[] {
 	}),
 
 	AUTHENTICATED_POST(HttpMethod.POST, new String[] {
-		"/api/v1/auth/logout"
+		"/api/v1/auth/logout",
+		"/api/v1/enter/checkin",
+		"/api/v1/enter/checkout"
 	}),
 
 	AUTHENTICATED_PUT(HttpMethod.PUT, new String[] {

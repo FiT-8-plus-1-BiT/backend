@@ -42,70 +42,70 @@ class SessionServiceTest {
 	@Test
 	void checkIn() {
 		// Given
-		Long userId = 1L;
+		String email = "test@gmail.com";
 
 		// When
-		sessionService.checkIn(userId);
+		sessionService.checkIn(email);
 
 		// Then
-		verify(hashOperations).put("session_user", userId.toString(), "null");
+		verify(hashOperations).put("session_user", email, "null");
 	}
 
 	@Test
 	void checkOut() {
 		// Given
-		Long userId = 1L;
+		String email = "test@gmail.com";
 
 		// When
-		sessionService.checkOut(userId);
+		sessionService.checkOut(email);
 
 		// Then
-		verify(hashOperations).delete("session_user", userId.toString());
+		verify(hashOperations).delete("session_user", email);
 	}
 
 	@Test
 	void getUpdatedSessionData() {
 		Session session = new Session();
-		setField(session, "sessionId", 123L);
+		setField(session, "audioChannel", 123);
 		setField(session, "standardCount", 10);
 
 		when(sessionRepository.findAll()).thenReturn(List.of(session));
-		when(sessionRepository.findById(123L)).thenReturn(Optional.of(session));
+		when(sessionRepository.findByAudioChannel(123)).thenReturn(Optional.of(session));
 
 		when(hashOperations.values("session_user")).thenReturn(List.of("123", "123")); // 2명 접속
 
 		when(redisTemplate.opsForHash()).thenReturn(hashOperations);
 
-		Map<Long, Map<String, Object>> result = sessionService.getUpdatedSessionData();
+		Map<Integer, Map<String, Object>> result = sessionService.getUpdatedSessionData();
 
-		assertThat(result).containsKey(123L);
-		assertThat(result.get(123L)).containsEntry("percent", 20.0);
+		assertThat(result).containsKey(123);
+		assertThat(result.get(123)).containsEntry("percent", 20.0);
 	}
 
 	@Test
 	void updateAndBroadcastIfChanged() {
 		// Given
-		Long sessionId = 123L;
+		Integer audioChannel = 123;
 		double percent = 100.0;
 		String currentLevel = "여유"; // 기존 값
 		String newLevel = "혼잡"; // 예상값 (변경됨)
 		Session session = new Session();
-		setField(session, "sessionId", 123L);
+		setField(session, "audioChannel", 123);
 		setField(session, "standardCount", 5);
 
 		when(redisTemplate.opsForHash()).thenReturn(hashOperations);
-		when(hashOperations.get("session_congestion", sessionId)).thenReturn(currentLevel);
-		when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+		when(hashOperations.get("session_congestion", audioChannel)).thenReturn(currentLevel);
+		when(sessionRepository.findByAudioChannel(audioChannel)).thenReturn(Optional.of(session));
 		when(hashOperations.values("session_user")).thenReturn(List.of("123", "123", "123", "123", "123"));
 
 		// When
-		sessionService.updateAndBroadcastIfChanged(sessionId);
+		sessionService.updateAndBroadcastIfChanged(audioChannel);
 
 		// Then
-		verify(hashOperations).put("session_congestion", sessionId.toString(), newLevel);
+		verify(hashOperations).put("session_congestion", audioChannel.toString(), newLevel);
 		verify(redisTemplate).convertAndSend(eq("/sub/ws-room"), argThat(message -> {
 			Map<String, Object> msg = (Map<String, Object>)message;
-			return msg.get("sessionId").equals(sessionId) &&
+			return msg.get("sessionId").equals(audioChannel) &&
 				msg.get("percent").equals(percent) &&
 				msg.get("level").equals(newLevel);
 		}));

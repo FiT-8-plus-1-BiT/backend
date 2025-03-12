@@ -3,7 +3,7 @@ name: CD Pipeline
 on:
   push:
     branches:
-      - "dev"
+      - "feat-#22-ci-cd"
   workflow_dispatch:
 
 jobs:
@@ -47,31 +47,35 @@ jobs:
 #            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/fit:latest
 #
 #            # 환경 변수 설정
+#            echo "Creating environment variables..."
 #            echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
 #            echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
 #            echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
 #            echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
 #            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
-#            echo "SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}" >> .env
 #            echo "SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}" >> .env
-#            echo "SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> .env
-#            echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> .env
 #            echo "SPRING_REDIS_HOST=${{ secrets.SPRING_REDIS_HOST }}" >> .env
-#            echo "SPRING_REDIS_PORT=${{ secrets.SPRING_REDIS_PORT }}" >> .env
-#            echo "KURENTO_URL=${{ secrets.KURENTO_URL }}" >> .env
 #
 #            # 기존 컨테이너 종료 및 삭제
+#            echo "Stopping and removing the existing container..."
 #            docker stop green || true
 #            docker rm green || true
 #
 #            # 새로운 컨테이너 실행 (보안 환경 변수 적용)
+#            echo "Deploying new container as GREEN..."
 #            docker run -d --name green --env-file .env -p 8082:8080 ${{ secrets.DOCKERHUB_USERNAME }}/fit:latest
 #
 #            # Nginx 설정 변경 후 무중단 배포
+#            echo "Switching traffic to GREEN container..."
 #            sudo sed -i 's/8081/8082/' /etc/nginx/nginx.conf
 #            sudo systemctl reload nginx
 #
+#            echo "Verifying deployment..."
+#            curl -s http://localhost:8082/actuator/health || (echo "Deployment failed!" && exit 1)
+#
 #            # 기존 컨테이너 정리 (1시간 후 삭제 -> 임시)
+#            echo "Scheduling old BLUE container for cleanup in 1 hour..."
 #            echo "docker stop blue && docker rm blue" | at now + 1 hour
 #
+#            echo "Renaming GREEN container to BLUE..."
 #            docker rename green blue

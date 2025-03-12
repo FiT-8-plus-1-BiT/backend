@@ -120,6 +120,10 @@ jobs:
             add_env_var "SPRING_DATASOURCE_URL" "${{ secrets.SPRING_DATASOURCE_URL }}"
             add_env_var "SPRING_REDIS_HOST" "${{ secrets.SPRING_REDIS_HOST }}"
             
+            if ! docker network ls | grep -q "fit-network"; then
+              echo "Creating Docker network: fit-network"
+              docker network create fit-network
+            fi
             
             if ! docker ps --format '{{.Names}}' | grep -q 'mysql'; then
               echo "Starting MySQL..."

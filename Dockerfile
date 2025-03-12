@@ -1,26 +1,23 @@
-# 기본 이미지 설정
-FROM openjdk:17-jdk-slim
+# 빌드 단계 (JAR 생성)
+FROM --platform=linux/amd64 openjdk:17-jdk-slim AS build
 
-# 로케일 및 타임존 설정을 위해 필요한 패키지 설치
-RUN apt-get update && \
-    apt-get install -y locales tzdata && \
-    echo "ko_KR.UTF-8 UTF-8" > /etc/locale.gen && \
-    locale-gen && \
-    ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
-    echo "Asia/Seoul" > /etc/timezone && \
-    apt-get clean
+WORKDIR /app
+ARG JAR_FILE=build/libs/*.jar
+COPY ${JAR_FILE} app.jar
 
-# 환경 변수 설정 (한글, 시간대)
-ENV LANG=ko_KR.UTF-8
-ENV LANGUAGE=ko_KR:ko
-ENV LC_ALL=ko_KR.UTF-8
-ENV TZ=Asia/Seoul
+# 실행 단계 (최적화된 컨테이너)
+FROM --platform=linux/amd64 openjdk:17-jdk-slim
 
-# 작업 디렉토리 설정
 WORKDIR /app
 
-# JAR 파일 복사
-COPY build/libs/*.jar app.jar
+# 모든 application.yml 파일 복사 (application.yml & application-prod.yml 포함)
+COPY src/main/resources/application*.yml /app/config/
 
-# 컨테이너 실행 시 Spring Boot 실행
-CMD ["java", "-jar", "app.jar"]
+# JAR 파일 복사
+COPY --from=build /app/app.jar app.jar
+
+# 실행 시 prod 프로파일을 활성화하도록 설정
+ENV SPRING_PROFILES_ACTIVE=prod
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-Dspring.config.location=/app/config/", "-jar", "app.jar"]

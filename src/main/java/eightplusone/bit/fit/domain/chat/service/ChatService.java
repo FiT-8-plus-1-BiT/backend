@@ -4,10 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
 import eightplusone.bit.fit.domain.chat.entity.ChatMessage;
+import eightplusone.bit.fit.domain.chat.enums.ChatCategory;
+import eightplusone.bit.fit.domain.chat.repository.ChatLikeRepository;
 import eightplusone.bit.fit.domain.chat.repository.ChatRepository;
 import eightplusone.bit.fit.domain.user.repository.UserRedisRepository;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
+import eightplusone.bit.fit.global.exception.CustomException;
+import eightplusone.bit.fit.global.exception.ErrorCode;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -17,19 +22,31 @@ import org.springframework.stereotype.Service;
 public class ChatService {
 	private final ChatRepository chatRepository;
 	private final RedisTemplate<String, Object> redisTemplate;
-	private final UserRedisRepository userRedisRepository; // Redis 기반 닉네임 관리
-	private final UserRepository userRepository; // 기존 JPA UserRepository
+	private final UserRedisRepository userRedisRepository;
+	private final ChatLikeRepository chatLikeRepository;
 
 	public ChatService(ChatRepository chatRepository, RedisTemplate<String, Object> redisTemplate,
-		UserRedisRepository userRedisRepository, UserRepository userRepository) {
+		UserRedisRepository userRedisRepository, UserRepository userRepository, ChatLikeRepository chatLikeRepository) {
 		this.chatRepository = chatRepository;
 		this.redisTemplate = redisTemplate;
 		this.userRedisRepository = userRedisRepository;
-		this.userRepository = userRepository;
+		this.chatLikeRepository = chatLikeRepository;
 	}
 
 	// 메시지 전송 (Redis Pub/Sub 사용)
 	public void sendMessage(ChatMessageDto dto, String userId, String sessionId) throws JsonProcessingException {
+		if (dto.getMessage() == null || dto.getMessage().trim().isEmpty()) {
+			throw new CustomException(ErrorCode.INVALID_MESSAGE_FORMAT);
+		}
+
+		if (dto.getMessage().length() > 300) {
+			throw new CustomException(ErrorCode.MESSAGE_TOO_LONG);
+		}
+
+		if (!chatRepository.existsBySessionId(sessionId)) {
+			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
+		}
+
 		ObjectMapper objectMapper = new ObjectMapper();
 		ChatMessage message = ChatMessage.builder()
 			.sessionId(sessionId)
@@ -43,18 +60,24 @@ public class ChatService {
 		String jsonMessage = objectMapper.writeValueAsString(message);
 		String redisKey = "chat-" + sessionId;
 
-		log.info("Redis 발행 메세지 : {}->{}", redisKey, jsonMessage);
+		log.info("Redis 발행 메세지 : {} -> {}", redisKey, jsonMessage);
 
 		redisTemplate.convertAndSend(redisKey, dto);
 	}
 
 	// 특정 채팅방의 최근 메시지 조회
 	public List<Object> getRecentMessages(String sessionId) {
+		if (!chatRepository.existsBySessionId(sessionId)) {
+			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
+		}
 		return chatRepository.getRecentMessages(sessionId);
 	}
 
 	// 특정 채팅방 데이터 삭제 (강연 종료 후)
 	public void clearChat(String sessionId) {
+		if (!chatRepository.existsBySessionId(sessionId)) {
+			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
+		}
 		chatRepository.clearChat(sessionId);
 	}
 
@@ -63,4 +86,51 @@ public class ChatService {
 		userRedisRepository.saveUserName(userId, name);
 	}
 
+	// 좋아요 추가
+	public void likeMessage(String userId, String messageId) {
+		if (chatLikeRepository.hasLiked(userId, messageId)) {
+			throw new CustomException(ErrorCode.DUPLICATE_LIKE);
+		}
+		chatLikeRepository.likeMessage(userId, messageId);
+	}
+
+	// 좋아요 취소
+	public void unlikeMessage(String userId, String messageId) {
+		if (!chatLikeRepository.hasLiked(userId, messageId)) {
+			throw new CustomException(ErrorCode.CANNOT_UNLIKE);
+		}
+		chatLikeRepository.unlikeMessage(userId, messageId);
+	}
+
+	// 좋아요 개수 조회
+	public int getLikeCount(String messageId) {
+		return chatLikeRepository.getLikeCount(messageId);
+	}
+
+	// 특정 세션의 QUESTION 메시지를 좋아요 기준으로 정렬
+	public List<ChatMessageDto> getSortedQuestionMessages(String sessionId) {
+		if (!chatRepository.existsBySessionId(sessionId)) {
+			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
+		}
+
+		List<ChatMessage> messages = chatRepository.getRecentMessages(sessionId)
+			.stream()
+			.filter(obj -> obj instanceof ChatMessage)
+			.map(obj -> (ChatMessage)obj)
+			.filter(msg -> msg.getCategory() == ChatCategory.QUESTION)
+			.collect(Collectors.toList());
+
+		List<ChatMessage> topLikedMessages = messages.stream()
+			.sorted((m1, m2) -> Integer.compare(getLikeCount(m2.getMessageId()), getLikeCount(m1.getMessageId())))
+			.limit(3)
+			.collect(Collectors.toList());
+
+		messages.removeAll(topLikedMessages);
+		topLikedMessages.addAll(messages);
+
+		return topLikedMessages.stream()
+			.map(msg -> new ChatMessageDto(msg.getCategory(), msg.getMessage(),
+				userRedisRepository.getUserName(msg.getUserId())))
+			.collect(Collectors.toList());
+	}
 }

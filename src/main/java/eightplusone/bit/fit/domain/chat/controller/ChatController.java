@@ -12,7 +12,9 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -44,6 +46,30 @@ public class ChatController {
 	public ResponseEntity<String> clearChat(@PathVariable String sessionId) {
 		chatService.clearChat(sessionId);
 		return ResponseEntity.ok("Chat history cleared for session: " + sessionId);
+	}
+
+	// 좋아요 추가
+	@PostMapping("/like/{messageId}")
+	public void likeMessage(@PathVariable String messageId, @RequestParam String userId) {
+		chatService.likeMessage(userId, messageId);
+	}
+
+	// 좋아요 취소
+	@PostMapping("/unlike/{messageId}")
+	public void unlikeMessage(@PathVariable String messageId, @RequestParam String userId) {
+		chatService.unlikeMessage(userId, messageId);
+	}
+
+	// 좋아요 개수 조회
+	@GetMapping("/like/count/{messageId}")
+	public int getLikeCount(@PathVariable String messageId) {
+		return chatService.getLikeCount(messageId);
+	}
+
+	// 특정 세션의 QUESTION 메시지를 좋아요 순으로 정렬하여 반환
+	@GetMapping("/questions/{sessionId}")
+	public List<ChatMessageDto> getSortedQuestions(@PathVariable String sessionId) {
+		return chatService.getSortedQuestionMessages(sessionId);
 	}
 
 }

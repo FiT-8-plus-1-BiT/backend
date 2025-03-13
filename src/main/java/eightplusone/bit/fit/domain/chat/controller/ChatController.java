@@ -12,9 +12,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -46,12 +44,6 @@ public class ChatController {
 	public ResponseEntity<String> clearChat(@PathVariable String sessionId) {
 		chatService.clearChat(sessionId);
 		return ResponseEntity.ok("Chat history cleared for session: " + sessionId);
-	}
-
-	// 채팅에서 userId를 기반으로 최신 사용자 이름을 가져올 수 있도록 Redis에 name 저장
-	@PostMapping("/user/save-name")
-	public void saveUserName(@RequestParam String userId, @RequestParam String newName) {
-		chatService.saveUserName(userId, newName);
 	}
 
 }

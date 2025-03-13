@@ -49,8 +49,8 @@ public class ChatController {
 	}
 
 	// 채팅에서 userId를 기반으로 최신 사용자 이름을 가져올 수 있도록 Redis에 name 저장
-	@PostMapping("/user/update-name")
-	public void updateUserName(@RequestParam String userId, @RequestParam String newName) {
+	@PostMapping("/user/save-name")
+	public void saveUserName(@RequestParam String userId, @RequestParam String newName) {
 		chatService.saveUserName(userId, newName);
 	}
 

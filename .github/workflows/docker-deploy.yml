@@ -85,18 +85,6 @@ jobs:
             echo "Docker is already installed."
             fi
             
-            # Nginx 설치 확인 및 설치
-            if ! command -v nginx &> /dev/null
-            then
-            echo "Nginx not found. Installing Nginx..."
-            sudo apt update -y
-            sudo apt install -y nginx
-            sudo systemctl enable nginx
-            sudo systemctl start nginx
-            else
-            echo "Nginx is already installed."
-            fi
-            
             # 환경 변수 설정
             echo "Creating environment variables..."
 
@@ -106,7 +94,6 @@ jobs:
             local value=$2
             local file=".env"
             
-            # 해당 키가 이미 존재하는지 확인
             if grep -q "^$key=" "$file"; then
             echo "$key already exists in .env, skipping..."
             else
@@ -115,15 +102,8 @@ jobs:
             fi
             }
             
-            # 환경 변수 설정
-            add_env_var "MYSQL_ROOT_PASSWORD" "${{ secrets.MYSQL_ROOT_PASSWORD }}"
-            add_env_var "MYSQL_DATABASE" "${{ secrets.MYSQL_DATABASE }}"
-            add_env_var "MYSQL_USER" "${{ secrets.MYSQL_USER }}"
-            add_env_var "MYSQL_PASSWORD" "${{ secrets.MYSQL_PASSWORD }}"
+            # Redis 및 Spring Boot 관련 환경 변수 설정
             add_env_var "REDIS_PASSWORD" "${{ secrets.REDIS_PASSWORD }}"
-            add_env_var "SPRING_DATASOURCE_URL" "${{ secrets.SPRING_DATASOURCE_URL }}"
-            add_env_var "SPRING_DATASOURCE_USERNAME" "${{ secrets.SPRING_DATASOURCE_USERNAME }}"
-            add_env_var "SPRING_DATASOURCE_PASSWORD" "${{ secrets.SPRING_DATASOURCE_PASSWORD }}"
             add_env_var "SPRING_REDIS_HOST" "${{ secrets.SPRING_REDIS_HOST }}"
             add_env_var "DOCKERHUB_USERNAME" "${{ secrets.DOCKERHUB_USERNAME }}"
             
@@ -136,9 +116,5 @@ jobs:
             
             sudo docker-compose up -d
             sudo docker image prune -f
-            
-            # Nginx 재시작
-            echo "Restarting Nginx..."
-            sudo systemctl restart nginx
             
             echo "Deployment completed successfully!"

@@ -13,7 +13,7 @@ public final class CookieUtil {
 		return ResponseCookie.from(name, value)
 			.maxAge(cookieExpiration)
 			.path("/")
-			.sameSite("Strict")
+			.sameSite("Lax")
 			.httpOnly(true)
 			.build();
 	}

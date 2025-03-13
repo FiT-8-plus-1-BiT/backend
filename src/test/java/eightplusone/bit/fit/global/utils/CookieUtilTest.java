@@ -31,7 +31,7 @@ class CookieUtilTest {
 			() -> assertThat(cookie.getValue()).isEqualTo(COOKIE_VALUE),
 			() -> assertThat(cookie.getMaxAge().getSeconds()).isEqualTo(COOKIE_EXPIRATION),
 			() -> assertThat(cookie.getPath()).isEqualTo("/"),
-			() -> assertThat(cookie.getSameSite()).isEqualTo("Strict"),
+			() -> assertThat(cookie.getSameSite()).isEqualTo("Lax"),
 			() -> assertThat(cookie.isHttpOnly()).isTrue()
 		);
 	}

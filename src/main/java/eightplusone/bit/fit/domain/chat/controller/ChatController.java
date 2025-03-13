@@ -48,7 +48,7 @@ public class ChatController {
 		return ResponseEntity.ok("Chat history cleared for session: " + sessionId);
 	}
 
-	// 사용자 이름 저장 (닉네임 변경 시 사용)
+	// 채팅에서 userId를 기반으로 최신 사용자 이름을 가져올 수 있도록 Redis에 name 저장
 	@PostMapping("/user/update-name")
 	public void updateUserName(@RequestParam String userId, @RequestParam String newName) {
 		chatService.saveUserName(userId, newName);

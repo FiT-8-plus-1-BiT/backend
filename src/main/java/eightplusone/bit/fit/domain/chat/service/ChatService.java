@@ -53,12 +53,12 @@ public class ChatService {
 		return chatRepository.getRecentMessages(sessionId);
 	}
 
-	// 특정 채팅방 데이터 삭제
+	// 특정 채팅방 데이터 삭제 (강연 종료 후)
 	public void clearChat(String sessionId) {
 		chatRepository.clearChat(sessionId);
 	}
 
-	// 사용자 이름 저장 (닉네임 변경 시에도 반영)
+	// 채팅에서 userId를 기반으로 최신 사용자 이름을 가져올 수 있도록 Redis에 name 저장
 	public void saveUserName(String userId, String name) {
 		userRedisRepository.saveUserName(userId, name);
 	}

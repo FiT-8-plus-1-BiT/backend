@@ -114,7 +114,7 @@ class UserServiceTest {
 	}
 
 	@Test
-	@DisplayName("회원 개인 정보를 조회한다")
+	@DisplayName("회원 개인 정보를 업데이트한다")
 	void userProfileUpdate() {
 		//given
 		User user = UserFixture.USER_FIXTURE_1.createUser();

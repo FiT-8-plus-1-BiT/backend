@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import eightplusone.bit.fit.domain.user.dto.UserAccountResponseDto;
+import eightplusone.bit.fit.domain.user.dto.UserProfileResponseDto;
 import eightplusone.bit.fit.domain.user.service.UserService;
 import eightplusone.bit.fit.global.dto.ResponseDto;
 import eightplusone.bit.fit.global.utils.CookieUtil;
@@ -46,7 +48,17 @@ public class UserController {
 		@ApiResponse(responseCode = "401", description = "유효한 토큰이 아닙니다."),
 	})
 	@GetMapping("/account")
-	public ResponseEntity<ResponseDto<Object>> getAccount() {
+	public ResponseEntity<ResponseDto<UserAccountResponseDto>> getAccount() {
 		return ResponseEntity.status(OK).body(ResponseDto.success(OK, "회원 계정 정보 조회 성공", userService.getAccountInfo()));
+	}
+
+	@Operation(summary = "회원 개인 정보 조회", description = "**성공 응답 데이터:**  회원 개인 정보")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", description = "회원 개인 정보 조회 성공"),
+		@ApiResponse(responseCode = "401", description = "유효한 토큰이 아닙니다."),
+	})
+	@GetMapping("/profile")
+	public ResponseEntity<ResponseDto<UserProfileResponseDto>> getProfile() {
+		return ResponseEntity.status(OK).body(ResponseDto.success(OK, "회원 개인 정보 조회 성공", userService.getProfileInfo()));
 	}
 }

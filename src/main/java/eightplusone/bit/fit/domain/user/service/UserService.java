@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import eightplusone.bit.fit.domain.auth.service.OAuth2UnlinkService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
 import eightplusone.bit.fit.domain.user.dto.UserAccountResponseDto;
+import eightplusone.bit.fit.domain.user.dto.UserProfileResponseDto;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,5 +42,11 @@ public class UserService {
 		User user = userRepository.findLoginUserByEmail(
 			SecurityContextHolder.getContext().getAuthentication().getName());
 		return UserAccountResponseDto.of(user.getName(), user.getEmail());
+	}
+
+	public UserProfileResponseDto getProfileInfo() {
+		User user = userRepository.findLoginUserByEmail(
+			SecurityContextHolder.getContext().getAuthentication().getName());
+		return UserProfileResponseDto.of(user.getJob(), user.getYears(), user.getInterests());
 	}
 }

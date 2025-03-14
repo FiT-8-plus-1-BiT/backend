@@ -21,6 +21,7 @@ import eightplusone.bit.fit.domain.auth.dto.CustomUserDetails;
 import eightplusone.bit.fit.domain.auth.service.OAuth2UnlinkService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
 import eightplusone.bit.fit.domain.user.dto.UserAccountResponseDto;
+import eightplusone.bit.fit.domain.user.dto.UserProfileResponseDto;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.support.fixture.UserFixture;
@@ -83,6 +84,31 @@ class UserServiceTest {
 		assertAll(
 			() -> assertThat(accountInfo.getName()).isEqualTo(user.getName()),
 			() -> assertThat(accountInfo.getEmail()).isEqualTo(user.getEmail())
+		);
+	}
+
+	@Test
+	@DisplayName("회원 개인 정보를 조회한다")
+	void userProfileGet() {
+		//given
+		User user = UserFixture.USER_FIXTURE_1.createUser();
+
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+			new CustomUserDetails(user), null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+
+		Mockito.when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
+
+		//when
+		UserProfileResponseDto profileInfo = userService.getProfileInfo();
+
+		//then
+		assertAll(
+			() -> assertThat(profileInfo.getJob()).isEqualTo(user.getJob()),
+			() -> assertThat(profileInfo.getYears()).isEqualTo(user.getYears()),
+			() -> assertThat(profileInfo.getInterests()).isEqualTo(user.getInterests())
 		);
 	}
 }

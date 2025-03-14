@@ -6,6 +6,7 @@ import static org.springframework.http.HttpStatus.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,5 +38,15 @@ public class UserController {
 			.header(HttpHeaders.SET_COOKIE,
 				CookieUtil.createCookie(REFRESH_TOKEN_COOKIE_NAME, null, REFRESH_EXPIRATION_DELETE).toString())
 			.body(ResponseDto.success(CREATED, "회원 탈퇴 완료", null));
+	}
+
+	@Operation(summary = "회원 계정 정보 조회", description = "**성공 응답 데이터:**  회원 계정 정보")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", description = "회원 계정 정보 조회 성공"),
+		@ApiResponse(responseCode = "401", description = "유효한 토큰이 아닙니다."),
+	})
+	@GetMapping("/account")
+	public ResponseEntity<ResponseDto<Object>> getAccount() {
+		return ResponseEntity.status(OK).body(ResponseDto.success(OK, "회원 계정 정보 조회 성공", userService.getAccountInfo()));
 	}
 }

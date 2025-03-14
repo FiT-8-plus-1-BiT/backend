@@ -23,6 +23,7 @@ public enum ApiEndpoint {
 	}),
 
 	AUTHENTICATED_GET(HttpMethod.GET, new String[] {
+		"/api/v1/users/account"
 	}),
 
 	AUTHENTICATED_POST(HttpMethod.POST, new String[] {

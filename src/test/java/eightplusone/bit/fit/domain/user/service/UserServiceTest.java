@@ -1,5 +1,8 @@
 package eightplusone.bit.fit.domain.user.service;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import eightplusone.bit.fit.domain.auth.dto.CustomUserDetails;
 import eightplusone.bit.fit.domain.auth.service.OAuth2UnlinkService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
+import eightplusone.bit.fit.domain.user.dto.UserAccountResponseDto;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.support.fixture.UserFixture;
@@ -56,5 +60,29 @@ class UserServiceTest {
 
 		//then
 		Mockito.verify(userRepository, Mockito.times(1)).delete(user);
+	}
+
+	@Test
+	@DisplayName("회원 계정 정보를 조회한다")
+	void userAccountGet() {
+		//given
+		User user = UserFixture.USER_FIXTURE_1.createUser();
+
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+			new CustomUserDetails(user), null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+
+		Mockito.when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
+
+		//when
+		UserAccountResponseDto accountInfo = userService.getAccountInfo();
+
+		//then
+		assertAll(
+			() -> assertThat(accountInfo.getName()).isEqualTo(user.getName()),
+			() -> assertThat(accountInfo.getEmail()).isEqualTo(user.getEmail())
+		);
 	}
 }

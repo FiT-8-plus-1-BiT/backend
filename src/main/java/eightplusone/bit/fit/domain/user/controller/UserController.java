@@ -21,6 +21,7 @@ import eightplusone.bit.fit.global.utils.CookieUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -73,7 +74,7 @@ public class UserController {
 	})
 	@PutMapping("/profile")
 	public ResponseEntity<ResponseDto<Object>> updateProfile(
-		@RequestBody UserProfileUpdateRequestDto userProfileUpdateRequestDto) {
+		@Valid @RequestBody UserProfileUpdateRequestDto userProfileUpdateRequestDto) {
 		userService.updateProfileInfo(userProfileUpdateRequestDto);
 		return ResponseEntity.status(OK).body(ResponseDto.success(OK, "회원 개인 정보 업데이트 성공", null));
 	}

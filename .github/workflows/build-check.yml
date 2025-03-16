@@ -50,6 +50,11 @@ jobs:
         run: |
           echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> $GITHUB_ENV
           echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+
+      - name: Verify environment variables
+        run:
+          echo "Active Profile: $SPRING_PROFILES_ACTIVE"
 
       - name: Initialize MySQL User
         run: |
@@ -78,10 +83,6 @@ jobs:
         run: |
           docker run -d --name kurento-server -p 8888:8888 kurento/kurento-media-server
           sleep 10
-          
-      - name: Copy Private Configuration Files
-        run: ./gradlew copyPrivate
-
 
       - name: Build & Run Tests
         run: ./gradlew clean build test

@@ -91,6 +91,7 @@ jobs:
             add_env_var "SPRING_REDIS_HOST" "${{ secrets.SPRING_REDIS_HOST }}"
             add_env_var "DOCKERHUB_USERNAME" "${{ secrets.DOCKERHUB_USERNAME }}"
             add_env_var "EC2_HOST" "${{ secrets.EC2_HOST }}"
+            add_env_var "BASE_URL" "${{ secrets.BASE_URL }}"
             add_env_var "SPRING_DATASOURCE_URL" "${{ secrets.SPRING_DATASOURCE_URL }}"
             add_env_var "SPRING_DATASOURCE_USERNAME" "${{ secrets.SPRING_DATASOURCE_USERNAME }}"
             add_env_var "SPRING_DATASOURCE_PASSWORD" "${{ secrets.SPRING_DATASOURCE_PASSWORD }}"

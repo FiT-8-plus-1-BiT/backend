@@ -57,7 +57,7 @@ public class SecurityConfig {
 			.cors(corsCustomizer -> corsCustomizer.configurationSource(request -> {
 				CorsConfiguration configuration = new CorsConfiguration();
 				configuration.setAllowedOrigins(
-					List.of("https://jiangxy.github.io", "http://localhost:5173")); // TODO : 혼잡도 구현 끝날 경우 원본으로 되돌리기
+					List.of("https://jiangxy.github.io", allowedOrigins)); // TODO : 혼잡도 구현 끝날 경우 원본으로 되돌리기
 				configuration.setAllowedMethods(ALLOWED_METHODS);
 				configuration.setAllowCredentials(ALLOWED_CREDENTIALS);
 				configuration.setAllowedHeaders(ALLOWED_HEADERS);

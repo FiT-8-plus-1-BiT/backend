@@ -12,7 +12,6 @@ WORKDIR /app
 
 # 모든 application.yml 파일 복사 (application.yml & application-prod.yml 포함)
 COPY build/resources/main/application*.yml /app/config/
-COPY keystore.p12 /app/config/keystore.p12
 
 # JAR 파일 복사
 COPY --from=build /app/app.jar app.jar

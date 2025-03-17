@@ -51,10 +51,13 @@ public class User extends BaseTimeEntity {
 	private Role role;
 
 	@Builder
-	private User(String email, String name, String provider, Role role) {
+	private User(String email, String name, String provider, String job, Integer years, String interests, Role role) {
 		this.email = email;
 		this.name = name;
 		this.provider = provider;
+		this.job = job;
+		this.years = years;
+		this.interests = interests;
 		this.role = role;
 	}
 
@@ -65,5 +68,11 @@ public class User extends BaseTimeEntity {
 			.provider(provider)
 			.role(role)
 			.build();
+	}
+
+	public void updateProfileInfo(String job, Integer years, String interests) {
+		this.job = job;
+		this.years = years;
+		this.interests = interests;
 	}
 }

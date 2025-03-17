@@ -80,7 +80,7 @@ class AuthControllerTest {
 			.andExpect(header().string(SET_COOKIE, containsString("Path=/")))
 			.andExpect(header().string(SET_COOKIE, containsString("Max-Age=0")))
 			.andExpect(header().string(SET_COOKIE, containsString("HttpOnly")))
-			.andExpect(header().string(SET_COOKIE, containsString("SameSite=Lax")))
+			.andExpect(header().string(SET_COOKIE, containsString("SameSite=None")))
 			.andDo(print());
 	}
 
@@ -135,7 +135,7 @@ class AuthControllerTest {
 			.andExpect(header().string(SET_COOKIE, containsString("Path=/")))
 			.andExpect(header().string(SET_COOKIE, containsString("Max-Age=0")))
 			.andExpect(header().string(SET_COOKIE, containsString("HttpOnly")))
-			.andExpect(header().string(SET_COOKIE, containsString("SameSite=Lax")))
+			.andExpect(header().string(SET_COOKIE, containsString("SameSite=None")))
 			.andDo(print());
 	}
 }

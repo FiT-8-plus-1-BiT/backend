@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/enter")
 @RequiredArgsConstructor
-public class SessionController {
+public class EnterController {
 
 	private final SessionService sessionService;
 

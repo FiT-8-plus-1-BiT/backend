@@ -2,13 +2,17 @@ package eightplusone.bit.fit.domain.mysession.controller;
 
 import static org.springframework.http.HttpStatus.*;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import eightplusone.bit.fit.domain.mysession.dto.MySessionListResponseDto;
 import eightplusone.bit.fit.domain.mysession.dto.MySessionRegisterRequestDto;
 import eightplusone.bit.fit.domain.mysession.service.MySessionService;
 import eightplusone.bit.fit.global.dto.ResponseDto;
@@ -26,17 +30,31 @@ public class MySessionController {
 
 	@Operation(summary = "세션 미리 담기 요청", description = "**성공 응답 데이터:**  null")
 	@ApiResponses(value = {
-		@ApiResponse(responseCode = "200", description = "세션 미리 담기 성공"),
+		@ApiResponse(responseCode = "201", description = "세션 미리 담기 성공"),
 		@ApiResponse(responseCode = "400", description = "잘못된 입력 값"),
 		@ApiResponse(responseCode = "401", description = "유효한 토큰이 아닙니다."),
 		@ApiResponse(responseCode = "404", description = "해당 세션을 찾을 수 없습니다."),
 		@ApiResponse(responseCode = "500", description = "서버에 오류가 발생했습니다."),
 	})
 	@PostMapping
-	public ResponseEntity<ResponseDto<Object>> register(
+	public ResponseEntity<ResponseDto<Object>> registerSession(
 		@RequestBody MySessionRegisterRequestDto mySessionRegisterRequestDto) {
 		mySessionService.registerMySession(SecurityContextHolder.getContext().getAuthentication().getName(),
 			mySessionRegisterRequestDto.getSessionId());
 		return ResponseEntity.status(CREATED).body(ResponseDto.success(CREATED, "세션 미리 담기 등록 성공", null));
+	}
+
+	@Operation(summary = "미리 담은 세션 스케줄 조회", description = "**성공 응답 데이터:**  미리 담은 세션 리스트")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", description = "미리 담은 세션 스케쥴 조회 성공"),
+		@ApiResponse(responseCode = "400", description = "잘못된 입력 값"),
+		@ApiResponse(responseCode = "401", description = "유효한 토큰이 아닙니다."),
+		@ApiResponse(responseCode = "500", description = "서버에 오류가 발생했습니다."),
+	})
+	@GetMapping
+	public ResponseEntity<ResponseDto<List<MySessionListResponseDto>>> getRegisteredSessions() {
+		return ResponseEntity.status(OK).body(ResponseDto.success(OK, "미리 담은 세션 스케쥴 조회 성공",
+			mySessionService.findRegisteredMySessions(
+				SecurityContextHolder.getContext().getAuthentication().getName())));
 	}
 }

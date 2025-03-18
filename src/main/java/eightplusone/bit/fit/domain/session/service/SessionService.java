@@ -1,16 +1,18 @@
 package eightplusone.bit.fit.domain.session.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.entity.enums.CongestionLevel;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -84,7 +86,7 @@ public class SessionService {
 
 		if (!newLevel.equals(previousLevel)) {
 			hashOps.put(SESSION_CONGESTION_KEY, audioChannel.toString(), newLevel);
-			redisTemplate.convertAndSend("/sub/ws", Map.of(
+			redisTemplate.convertAndSend("/sub/session", Map.of(
 				"sessionId", audioChannel,
 				"percent", percent,
 				"level", newLevel

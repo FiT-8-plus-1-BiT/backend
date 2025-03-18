@@ -4,11 +4,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.util.ReflectionTestUtils.*;
 
-import eightplusone.bit.fit.domain.session.entity.Session;
-import eightplusone.bit.fit.domain.session.repository.SessionRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -16,6 +15,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+
+import eightplusone.bit.fit.domain.session.entity.Session;
+import eightplusone.bit.fit.domain.session.repository.SessionRepository;
 
 class SessionServiceTest {
 
@@ -101,7 +103,7 @@ class SessionServiceTest {
 
 		// Then
 		verify(hashOperations).put("session_congestion", audioChannel.toString(), newLevel);
-		verify(redisTemplate).convertAndSend(eq("/sub/ws"), argThat(message -> {
+		verify(redisTemplate).convertAndSend(eq("/sub/session"), argThat(message -> {
 			Map<String, Object> msg = (Map<String, Object>)message;
 			return msg.get("sessionId").equals(audioChannel) &&
 				msg.get("percent").equals(percent) &&

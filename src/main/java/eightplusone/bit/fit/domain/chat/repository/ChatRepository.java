@@ -3,11 +3,14 @@ package eightplusone.bit.fit.domain.chat.repository;
 import eightplusone.bit.fit.domain.chat.entity.ChatMessage;
 import java.time.Duration;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class ChatRepository {
+	private static final Logger log = LoggerFactory.getLogger(ChatRepository.class);
 	private static final String CHAT_LIST_KEY = "chat-";
 	private static final String LIKES_KEY = "chat_like";
 	private static final int MAX_CHAT_SIZE = 1000;
@@ -34,7 +37,12 @@ public class ChatRepository {
 	// 특정 채팅방(sessionId)의 최근 메시지 조회
 	public List<Object> getRecentMessages(String sessionId) {
 		String chatKey = CHAT_LIST_KEY + sessionId;
-		return redisTemplate.opsForList().range(chatKey, 0, -1);
+		List<Object> messages = redisTemplate.opsForList().range(chatKey, 0, -1);
+
+		// 💡 Redis에서 가져온 데이터 확인 로그 추가
+		log.info("🔍 Redis에서 가져온 메시지 ({}): {}", chatKey, messages);
+
+		return messages;
 	}
 
 	// 특정 채팅방(sessionId) 데이터 삭제

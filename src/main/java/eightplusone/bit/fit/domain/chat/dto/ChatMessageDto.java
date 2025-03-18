@@ -13,23 +13,19 @@ public class ChatMessageDto {
 	private ChatCategory category;
 	private String message;
 	private String name;
-
-	// @JsonCreator
-	// public ChatMessageDto(@JsonProperty("category") ChatCategory category,
-	// 	@JsonProperty("message") String message) {
-	// 	this.category = category;
-	// 	this.message = message;
-	// }
+	private String userId;
 
 	@JsonCreator
 	public ChatMessageDto(
 		@JsonProperty("messageId") String messageId,
 		@JsonProperty("category") ChatCategory category,
 		@JsonProperty("message") String message,
-		@JsonProperty("name") String name) {
+		@JsonProperty("name") String name,
+		@JsonProperty("userId") String userId) {
 		this.messageId = messageId;
 		this.category = category;
 		this.message = message;
 		this.name = name;
+		this.userId = userId;
 	}
 }

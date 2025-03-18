@@ -13,7 +13,11 @@ import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.entity.enums.CongestionLevel;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
 import eightplusone.bit.fit.domain.speaker.dto.SpeakerResponseDto;
+import eightplusone.bit.fit.domain.speaker.entity.Speaker;
+import eightplusone.bit.fit.domain.speaker.repository.SpeakerRepository;
 import eightplusone.bit.fit.domain.tag.dto.TagResponseDto;
+import eightplusone.bit.fit.domain.tag.entity.Tag;
+import eightplusone.bit.fit.domain.tag.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +29,8 @@ public class SessionService {
 	private final SessionRepository sessionRepository;
 	private final String SESSION_CONGESTION_KEY = "session_congestion";
 	private final String SESSION_USER_KEY = "session_user";
+	private final TagRepository tagRepository;
+	private final SpeakerRepository speakerRepository;
 
 	// TODO: User ID 매개변수 부분 -> 토큰으로 수정
 	// 체크인 시 레디스에 저장
@@ -98,14 +104,19 @@ public class SessionService {
 	}
 
 	public List<SessionListResponseDto> getSessionsList() {
-		List<Session> sessions = sessionRepository.findAllWithSpeakerAndTag();
+		List<Session> sessions = sessionRepository.findAll();
 
 		return sessions.stream()
-			.map(session -> SessionListResponseDto.from(
-				session,
-				SpeakerResponseDto.from(session.getSpeaker()),
-				TagResponseDto.from(session.getTag())
-			))
+			.map(session -> {
+				Speaker speaker = speakerRepository.findBySession_SessionId(session.getSessionId());
+				Tag tag = tagRepository.findBySession_SessionId(session.getSessionId());
+
+				return SessionListResponseDto.from(
+					session,
+					SpeakerResponseDto.from(speaker),
+					TagResponseDto.from(tag)
+				);
+			})
 			.collect(Collectors.toList());
 	}
 }

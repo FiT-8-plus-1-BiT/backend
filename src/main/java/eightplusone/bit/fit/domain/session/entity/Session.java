@@ -2,11 +2,15 @@ package eightplusone.bit.fit.domain.session.entity;
 
 import java.time.LocalDateTime;
 
+import eightplusone.bit.fit.domain.speaker.entity.Speaker;
+import eightplusone.bit.fit.domain.tag.entity.Tag;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
@@ -38,4 +42,10 @@ public class Session {
 
 	@Column(nullable = false)
 	private Integer audioChannel;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	private Tag tag;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	private Speaker speaker;
 }

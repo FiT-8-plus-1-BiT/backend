@@ -5,17 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eightplusone.bit.fit.domain.mysession.entity.MySession;
-import eightplusone.bit.fit.domain.speaker.entity.Speaker;
-import eightplusone.bit.fit.domain.tag.entity.Tag;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,12 +49,6 @@ public class Session {
 
 	@OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<MySession> mySessions = new ArrayList<>();
-
-	@OneToOne(fetch = FetchType.LAZY)
-	private Tag tag;
-
-	@OneToOne(fetch = FetchType.LAZY)
-	private Speaker speaker;
 
 	@Builder
 	public Session(String title, String sessionImage, String summary, LocalDateTime startTime, LocalDateTime endTime,

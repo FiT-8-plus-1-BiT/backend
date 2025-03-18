@@ -8,9 +8,12 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import eightplusone.bit.fit.domain.session.dto.SessionListResponseDto;
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.entity.enums.CongestionLevel;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
+import eightplusone.bit.fit.domain.speaker.dto.SpeakerResponseDto;
+import eightplusone.bit.fit.domain.tag.dto.TagResponseDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -92,5 +95,17 @@ public class SessionService {
 				"level", newLevel
 			));
 		}
+	}
+
+	public List<SessionListResponseDto> getSessionsList() {
+		List<Session> sessions = sessionRepository.findAllWithSpeakerAndTag();
+
+		return sessions.stream()
+			.map(session -> SessionListResponseDto.from(
+				session,
+				SpeakerResponseDto.from(session.getSpeaker()),
+				TagResponseDto.from(session.getTag())
+			))
+			.collect(Collectors.toList());
 	}
 }

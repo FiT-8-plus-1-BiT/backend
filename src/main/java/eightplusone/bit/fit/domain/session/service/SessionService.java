@@ -105,17 +105,14 @@ public class SessionService {
 		}
 	}
 
-	public Page<SessionListResponseDto> getSessionsList(Pageable pageable) {
-		Page<Session> sessions = sessionRepository.findAll(pageable);
+	public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagResponseDto tagDto) {
+		Page<Object[]> sessions = tagRepository.tagFilterAndSearch(pageable, tagDto);
 
 		return sessions.map(session -> {
-			Speaker speaker = speakerRepository.findBySession_SessionId(session.getSessionId());
-			Tag tag = tagRepository.findBySession_SessionId(session.getSessionId());
-
 			return SessionListResponseDto.from(
-				session,
-				SpeakerResponseDto.from(speaker),
-				TagResponseDto.from(tag)
+				(Session)session[0],
+				SpeakerResponseDto.from((Speaker)session[2]),
+				TagResponseDto.from((Tag)session[1])
 			);
 		});
 	}

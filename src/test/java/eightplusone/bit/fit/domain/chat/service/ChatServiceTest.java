@@ -51,7 +51,7 @@ public class ChatServiceTest {
 		userId = "test-user";
 		messageId = "test-message-id";
 
-		testMessageDto = new ChatMessageDto("msg-001", ChatCategory.GENERAL, "테스트 메시지", "테스터");
+		testMessageDto = new ChatMessageDto("msg-001", ChatCategory.GENERAL, "테스트 메시지", "테스터", "1");
 
 		testMessage = ChatMessage.builder()
 			.sessionId(sessionId)

@@ -220,4 +220,44 @@ class MySessionServiceTest {
 				session4.getEndTime().format(formatter))
 		);
 	}
+
+	@Test
+	@DisplayName("사용자는 강의 미리 담기를 취소한다")
+	void unregister() {
+		//given
+		User userFixture = UserFixture.USER_FIXTURE_1.createUser();
+		User user = userRepository.save(userFixture);
+
+		Session sessionFixture = SessionFixture.SESSION_STAGE_1_FIXTURE_1.createSession();
+		Session session = sessionRepository.save(sessionFixture);
+
+		MySession mySession = mySessionRepository.save(MySession.register(user, session));
+
+		//when
+		mySessionService.unregisterMySession(user.getEmail(), session.getSessionId());
+
+		//then
+		boolean exists = mySessionRepository.existsById(mySession.getId());
+		assertThat(exists).isFalse();
+	}
+
+	@Test
+	@DisplayName("사용자는 좋아요로 담은 강의를 취소한다")
+	void unlike() {
+		//given
+		User userFixture = UserFixture.USER_FIXTURE_1.createUser();
+		User user = userRepository.save(userFixture);
+
+		Session sessionFixture = SessionFixture.SESSION_STAGE_1_FIXTURE_1.createSession();
+		Session session = sessionRepository.save(sessionFixture);
+
+		MySession mySession = mySessionRepository.save(MySession.like(user, session));
+
+		//when
+		mySessionService.unlikeMySession(user.getEmail(), session.getSessionId());
+
+		//then
+		boolean exists = mySessionRepository.existsById(mySession.getId());
+		assertThat(exists).isFalse();
+	}
 }

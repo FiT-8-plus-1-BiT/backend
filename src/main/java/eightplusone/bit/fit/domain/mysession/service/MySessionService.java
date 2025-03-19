@@ -59,4 +59,16 @@ public class MySessionService {
 			.map(mySession -> MySessionLikedSessionsResponseDto.from(mySession.getSession()))
 			.collect(Collectors.toList());
 	}
+
+	@Transactional
+	public void unregisterMySession(String email, Long sessionId) {
+		User user = userRepository.findLoginUserByEmail(email);
+		mySessionRepository.deleteByUserIdAndSessionIdAndType(user.getId(), sessionId, MySessionType.REGISTER);
+	}
+
+	@Transactional
+	public void unlikeMySession(String email, Long sessionId) {
+		User user = userRepository.findLoginUserByEmail(email);
+		mySessionRepository.deleteByUserIdAndSessionIdAndType(user.getId(), sessionId, MySessionType.LIKE);
+	}
 }

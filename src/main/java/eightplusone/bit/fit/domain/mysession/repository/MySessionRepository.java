@@ -3,6 +3,7 @@ package eightplusone.bit.fit.domain.mysession.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import eightplusone.bit.fit.domain.mysession.entity.MySession;
@@ -13,4 +14,10 @@ public interface MySessionRepository extends JpaRepository<MySession, Long> {
 		select ms from MySession ms left join fetch ms.session where ms.user.id = :userId and ms.type = :type
 		""")
 	List<MySession> findSessionsByUserIdAndType(Long userId, MySessionType type);
+
+	@Modifying
+	@Query(""" 
+		delete from MySession ms where ms.user.id = :userId and ms.session.sessionId = :sessionId and ms.type = :type
+		""")
+	void deleteByUserIdAndSessionIdAndType(Long userId, Long sessionId, MySessionType type);
 }

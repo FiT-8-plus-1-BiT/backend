@@ -58,6 +58,7 @@ class SessionServiceTest {
 	}
 
 	@Test
+	@DisplayName("체크인을 한다.")
 	void checkIn() {
 		// Given
 		String email = "test@gmail.com";
@@ -70,6 +71,7 @@ class SessionServiceTest {
 	}
 
 	@Test
+	@DisplayName("체크아웃을 한다.")
 	void checkOut() {
 		// Given
 		String email = "test@gmail.com";
@@ -82,6 +84,7 @@ class SessionServiceTest {
 	}
 
 	@Test
+	@DisplayName("세션혼잡도를 전송한다.")
 	void getUpdatedSessionData() {
 		Session session = new Session();
 		setField(session, "audioChannel", 123);
@@ -101,6 +104,7 @@ class SessionServiceTest {
 	}
 
 	@Test
+	@DisplayName("혼잡도가 크게 바뀔 경우 전송한다.")
 	void updateAndBroadcastIfChanged() {
 		// Given
 		Integer audioChannel = 123;

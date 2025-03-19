@@ -82,7 +82,7 @@ public class SessionService {
 		double percent = getCongestionPercent(audioChannel);
 		String newLevel = getCongestionLevel(percent);
 
-		String previousLevel = hashOps.get(SESSION_CONGESTION_KEY, audioChannel);
+		String previousLevel = hashOps.get(SESSION_CONGESTION_KEY, audioChannel.toString());
 
 		if (!newLevel.equals(previousLevel)) {
 			hashOps.put(SESSION_CONGESTION_KEY, audioChannel.toString(), newLevel);

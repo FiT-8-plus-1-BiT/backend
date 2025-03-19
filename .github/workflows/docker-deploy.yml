@@ -1,0 +1,115 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - "dev"
+  workflow_dispatch:
+
+jobs:
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.SUB_MODULE_TOKEN }}
+
+      - name: Update Git Submodules
+        run: git submodule update --init --recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: true
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Spring Boot Application
+        run: ./gradlew clean build -x test
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/fit:latest
+
+  deploy:
+    needs: docker-build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH into EC2 and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Connected to EC2!"
+            
+            # 환경 변수 설정
+            echo "Creating environment variables..."
+
+            # 환경 변수 추가 함수
+            add_env_var() {
+            local key=$1
+            local value=$2
+            local file=".env"
+            
+            if grep -q "^$key=" "$file"; then
+            echo "$key already exists in .env, skipping..."
+            else
+            echo "$key=$value" >> "$file"
+            echo "Added $key to .env"
+            fi
+            }
+            
+            # Redis 및 Spring Boot 관련 환경 변수 설정
+            add_env_var "REDIS_PASSWORD" "${{ secrets.REDIS_PASSWORD }}"
+            add_env_var "SPRING_REDIS_HOST" "${{ secrets.SPRING_REDIS_HOST }}"
+            add_env_var "DOCKERHUB_USERNAME" "${{ secrets.DOCKERHUB_USERNAME }}"
+            add_env_var "EC2_HOST" "${{ secrets.EC2_HOST }}"
+            add_env_var "BASE_URL" "${{ secrets.BASE_URL }}"
+            add_env_var "SPRING_DATASOURCE_URL" "${{ secrets.SPRING_DATASOURCE_URL }}"
+            add_env_var "SPRING_DATASOURCE_USERNAME" "${{ secrets.SPRING_DATASOURCE_USERNAME }}"
+            add_env_var "SPRING_DATASOURCE_PASSWORD" "${{ secrets.SPRING_DATASOURCE_PASSWORD }}"
+            add_env_var "KURENTO_URL" "${{ secrets.KURENTO_URL }}"
+            
+            echo "Stopping and removing old containers..."
+            sudo docker ps -aq | xargs -r sudo docker rm -f  # 실행 중인 컨테이너가 없으면 오류 방지
+            sudo docker network prune -f  # 사용되지 않는 네트워크 삭제
+            
+            
+            echo "Pulling latest Docker image..."
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/fit:latest
+            
+            sudo docker compose up -d
+            sudo docker image prune -f
+            
+            # Nginx 재시작
+            echo "Restarting Nginx..."
+            sudo systemctl restart nginx
+            
+            echo "Deployment completed successfully!"

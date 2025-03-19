@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: fit-app
+    #    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kurento:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - fit-network
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fit
+      MYSQL_USER: fit
+      MYSQL_PASSWORD: fit1234!
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - fit-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s  # MySQL이 실행되는데 시간이 걸리므로 여유를 둠
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    command: redis-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fit-network
+
+  kurento:
+    image: kurento/kurento-media-server
+    restart: always
+    container_name: kurento
+    ports:
+      - "8888:8888"
+    networks:
+      - fit-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  fit-network:
+    driver: bridge

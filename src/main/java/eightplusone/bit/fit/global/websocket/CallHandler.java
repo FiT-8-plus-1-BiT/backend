@@ -106,6 +106,7 @@ public class CallHandler extends TextWebSocketHandler {
 		if (!room.hasPresenter()) {
 			sendResponse(session, "viewerResponse", "rejected", "message",
 				"No presenter available in this room.");
+			log.warn("Viewer '{}' failed to join room '{}': No presenter available.", session.getId(), room.getName());
 			return;
 		}
 
@@ -116,6 +117,7 @@ public class CallHandler extends TextWebSocketHandler {
 			sendResponse(session, "viewerResponse", "accepted", "sdpAnswer", sdpAnswer);
 		} else {
 			sendResponse(session, "viewerResponse", "rejected");
+			log.error("Failed to add viewer '{}' to room '{}'.", session.getId(), room.getName());
 		}
 	}
 

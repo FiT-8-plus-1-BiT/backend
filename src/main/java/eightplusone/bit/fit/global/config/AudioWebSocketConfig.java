@@ -1,6 +1,7 @@
 package eightplusone.bit.fit.global.config;
 
 import org.kurento.client.KurentoClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 public class AudioWebSocketConfig implements WebSocketConfigurer {
 
 	private final TokenProvider tokenProvider;
+	@Value("${spring.kurento.ws-url}")
+	private String kurentoWsUrl;
 
 	@Bean
 	public RoomManager roomManager() {
@@ -31,7 +34,7 @@ public class AudioWebSocketConfig implements WebSocketConfigurer {
 
 	@Bean
 	public KurentoClient kurentoClient() {
-		return KurentoClient.create("ws://localhost:8888/kurento");
+		return KurentoClient.create(kurentoWsUrl);
 	}
 
 	@Override

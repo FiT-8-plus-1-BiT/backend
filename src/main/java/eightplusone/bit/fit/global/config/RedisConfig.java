@@ -1,13 +1,16 @@
 package eightplusone.bit.fit.global.config;
 
-import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
-import eightplusone.bit.fit.global.pubsub.ChatSubscriber;
+import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.PatternTopic;
@@ -16,13 +19,48 @@ import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
+import eightplusone.bit.fit.global.pubsub.ChatSubscriber;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SocketOptions;
+import io.lettuce.core.TimeoutOptions;
+
 @Configuration
 public class RedisConfig {
 	private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
 
+	@Value("${spring.data.redis.host}")
+	private String redisHost;
+
+	@Value("${spring.data.redis.port}")
+	private int redisPort;
+
+	@Value("${spring.data.redis.password:}") // 기본값 "" (비밀번호 없을 경우)
+	private String redisPassword;
+
 	@Bean
-	public RedisConnectionFactory redisConnectionFactory() {
-		return new LettuceConnectionFactory();
+	public LettuceConnectionFactory redisConnectionFactory() {
+		RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
+		redisConfig.setHostName(redisHost);
+		redisConfig.setPort(redisPort);
+		if (!redisPassword.isEmpty()) {
+			redisConfig.setPassword(redisPassword);
+		}
+		LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+			.commandTimeout(Duration.ofSeconds(5)) // 명령 실행 타임아웃 (기본값 60초 → 5초로 최적화)
+			.shutdownTimeout(Duration.ZERO) // 종료 시 대기 시간 없음
+			.clientOptions(ClientOptions.builder()
+				.autoReconnect(true) // 자동 재연결 활성화
+				.socketOptions(SocketOptions.builder()
+					.connectTimeout(Duration.ofSeconds(5)) // 소켓 연결 타임아웃 (기본값 10초 → 5초)
+					.build()
+				)
+				.timeoutOptions(TimeoutOptions.enabled()) // Redis 요청 타임아웃 활성화
+				.build()
+			)
+			.build();
+
+		return new LettuceConnectionFactory(redisConfig, clientConfig);
 	}
 
 	@Bean

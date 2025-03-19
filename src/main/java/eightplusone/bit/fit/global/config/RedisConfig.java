@@ -1,7 +1,12 @@
 package eightplusone.bit.fit.global.config;
 
+import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
+import eightplusone.bit.fit.global.pubsub.ChatSubscriber;
+import eightplusone.bit.fit.global.pubsub.LikeSubscriber;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SocketOptions;
+import io.lettuce.core.TimeoutOptions;
 import java.time.Duration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,17 +18,12 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
-import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
-import eightplusone.bit.fit.global.pubsub.ChatSubscriber;
-import io.lettuce.core.ClientOptions;
-import io.lettuce.core.SocketOptions;
-import io.lettuce.core.TimeoutOptions;
 
 @Configuration
 public class RedisConfig {
@@ -91,17 +91,32 @@ public class RedisConfig {
 	// Redis 메시지 리스너 등록
 	@Bean
 	public RedisMessageListenerContainer redisContainer(RedisConnectionFactory connectionFactory,
-		MessageListenerAdapter listenerAdapter) {
+		MessageListenerAdapter chatListenerAdapter,
+		MessageListenerAdapter likeListenerAdapter) { // 좋아요 메시지 리스너 추가
+
 		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
-		container.addMessageListener(listenerAdapter, new PatternTopic("chat-*")); // "chat-room" 채널 구독
-		logger.info("✅ Redis 구독 완료: chat-*");
+
+		// 채팅 메시지 구독 (chat-{sessionId} 패턴)
+		container.addMessageListener(chatListenerAdapter, new PatternTopic("chat-*"));
+
+		// 좋아요 메시지 구독 (chat-likes)
+		container.addMessageListener(likeListenerAdapter, new ChannelTopic("chat-likes"));
+
+		logger.info("✅ Redis 구독 완료: chat-* (채팅), chat-likes (좋아요)");
 		return container;
 	}
 
 	// ChatSubscriber를 Redis 리스너로 등록
 	@Bean
-	public MessageListenerAdapter listenerAdapter(ChatSubscriber subscriber) {
-		return new MessageListenerAdapter(subscriber, "onMessage");
+	public MessageListenerAdapter chatListenerAdapter(ChatSubscriber chatSubscriber) {
+		return new MessageListenerAdapter(chatSubscriber, "onMessage");
 	}
+
+	// likeSubscriber를 Redis 리스너로 등록
+	@Bean
+	public MessageListenerAdapter likeListenerAdapter(LikeSubscriber likeSubscriber) {
+		return new MessageListenerAdapter(likeSubscriber, "onMessage");
+	}
+
 }

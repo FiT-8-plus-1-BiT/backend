@@ -76,9 +76,9 @@ tasks.named("build") {
     dependsOn("copyPrivate")
 }
 
-def generated = 'src/main/generated'
+def generated = layout.buildDirectory.dir("generated/querydsl").get().asFile
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.getGeneratedSourceOutputDirectory().set(file(generated))
 }
 

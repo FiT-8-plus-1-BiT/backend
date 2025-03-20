@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-@Schema(name = "TagResponseDto: 태그 정보 응답 dto")
+@Schema(name = "TagDto: 태그 정보 응답 및 필터링에 사용되 dto")
 public class TagDto {
 	private String field;
 

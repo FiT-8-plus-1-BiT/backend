@@ -20,6 +20,8 @@ public class SessionListResponseDto {
 	@Schema(description = "", example = "")
 	private String summary;
 
+	private Boolean isMySession;
+
 	private SpeakerResponseDto speaker;
 
 	private TagResponseDto tags;

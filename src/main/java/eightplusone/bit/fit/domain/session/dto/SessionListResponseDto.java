@@ -2,7 +2,7 @@ package eightplusone.bit.fit.domain.session.dto;
 
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.speaker.dto.SpeakerResponseDto;
-import eightplusone.bit.fit.domain.tag.dto.TagResponseDto;
+import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,9 +22,9 @@ public class SessionListResponseDto {
 
 	private SpeakerResponseDto speaker;
 
-	private TagResponseDto tags;
+	private TagDto tags;
 
-	public static SessionListResponseDto from(Session session, SpeakerResponseDto speaker, TagResponseDto tags) {
+	public static SessionListResponseDto from(Session session, SpeakerResponseDto speaker, TagDto tags) {
 		return SessionListResponseDto.builder()
 			.id(session.getSessionId())
 			.title(session.getTitle())

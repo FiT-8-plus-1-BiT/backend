@@ -11,9 +11,9 @@ public enum SessionFixture {
 	 * 1부 세션 1,2,3
 	 */
 	SESSION_STAGE_1_FIXTURE_1("1부 세션1 09:50-10:50", "백엔드 잘하는 법", "image1_1.png",
-		LocalDateTime.of(2024, 4, 2, 9, 50), LocalDateTime.of(2024, 4, 2, 10, 50), 100, 2),
+		LocalDateTime.now(), LocalDateTime.now().plusHours(3), 100, 2),
 	SESSION_STAGE_1_FIXTURE_2("1부 세션2 09:50-10:50", "프론트엔드 마스터하기", "image1_2.png",
-		LocalDateTime.of(2024, 4, 2, 9, 50), LocalDateTime.of(2024, 4, 2, 10, 50), 50, 1),
+		LocalDateTime.now(), LocalDateTime.now().plusHours(3), 50, 1),
 	SESSION_STAGE_1_FIXTURE_3("1부 세션3 09:50-10:50", "데이터베이스 성능 최적화", "image1_3.png",
 		LocalDateTime.of(2024, 4, 2, 9, 50), LocalDateTime.of(2024, 4, 2, 10, 50), 70, 3),
 

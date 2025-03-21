@@ -16,10 +16,8 @@ import eightplusone.bit.fit.domain.session.entity.enums.CongestionLevel;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
 import eightplusone.bit.fit.domain.speaker.dto.SpeakerResponseDto;
 import eightplusone.bit.fit.domain.speaker.entity.Speaker;
-import eightplusone.bit.fit.domain.speaker.repository.SpeakerRepository;
-import eightplusone.bit.fit.domain.tag.dto.TagResponseDto;
+import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import eightplusone.bit.fit.domain.tag.entity.Tag;
-import eightplusone.bit.fit.domain.tag.repository.TagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -31,8 +29,6 @@ public class SessionService {
 	private final SessionRepository sessionRepository;
 	private final String SESSION_CONGESTION_KEY = "session_congestion";
 	private final String SESSION_USER_KEY = "session_user";
-	private final TagRepository tagRepository;
-	private final SpeakerRepository speakerRepository;
 
 	// TODO: User ID 매개변수 부분 -> 토큰으로 수정
 	// 체크인 시 레디스에 저장
@@ -105,15 +101,27 @@ public class SessionService {
 		}
 	}
 
-	public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagResponseDto tagDto) {
-		Page<Object[]> sessions = tagRepository.tagFilterAndSearch(pageable, tagDto);
+	public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagDto tagDto) {
+		Page<Object[]> sessions = sessionRepository.tagFilterAndSearch(pageable, tagDto);
 
 		return sessions.map(session -> {
 			return SessionListResponseDto.from(
 				(Session)session[0],
 				SpeakerResponseDto.from((Speaker)session[2]),
-				TagResponseDto.from((Tag)session[1])
+				TagDto.from((Tag)session[1])
 			);
 		});
+	}
+
+	public List<SessionListResponseDto> getLiveSessions() {
+		List<Object[]> sessions = sessionRepository.findLiveSessionsWithSpeakerAndTag();
+
+		return sessions.stream().map(session -> {
+			return SessionListResponseDto.from(
+				(Session)session[0],
+				SpeakerResponseDto.from((Speaker)session[1]),
+				TagDto.from((Tag)session[2])
+			);
+		}).toList();
 	}
 }

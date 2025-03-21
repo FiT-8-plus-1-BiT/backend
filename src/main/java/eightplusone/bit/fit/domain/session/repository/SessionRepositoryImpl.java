@@ -1,9 +1,10 @@
-package eightplusone.bit.fit.domain.tag.repository;
+package eightplusone.bit.fit.domain.session.repository;
 
 import static eightplusone.bit.fit.domain.session.entity.QSession.*;
 import static eightplusone.bit.fit.domain.speaker.entity.QSpeaker.*;
 import static eightplusone.bit.fit.domain.tag.entity.QTag.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -17,17 +18,17 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
-import eightplusone.bit.fit.domain.tag.dto.TagResponseDto;
+import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
-public class TagRepositoryImpl implements TagRepositoryCustom {
+public class SessionRepositoryImpl implements SessionRepositoryCustom {
 
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Page<Object[]> tagFilterAndSearch(Pageable pageable, TagResponseDto dto) {
+	public Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto) {
 		List<Tuple> results = queryFactory
 			.select(session, tag, speaker)
 			.from(session)
@@ -76,5 +77,22 @@ public class TagRepositoryImpl implements TagRepositoryCustom {
 
 	public static BooleanExpression containLevel(String level) {
 		return StringUtils.hasText(level) ? tag.level.eq(level) : null;
+	}
+
+	@Override
+	public List<Object[]> findLiveSessionsWithSpeakerAndTag() {
+		LocalDateTime now = LocalDateTime.now();
+
+		List<Tuple> result = queryFactory
+			.select(session, speaker, tag)
+			.from(session)
+			.leftJoin(speaker).on(speaker.session.eq(session))
+			.leftJoin(tag).on(tag.session.eq(session))
+			.where(session.startTime.loe(now), session.endTime.goe(now))
+			.fetch();
+
+		return result.stream()
+			.map(tuple -> new Object[] {tuple.get(session), tuple.get(speaker), tuple.get(tag)})
+			.toList();
 	}
 }

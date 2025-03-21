@@ -18,6 +18,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +48,7 @@ class ChatServiceTest {
 	private final String userId = "testUser";
 	private final String messageId = "testMessage";
 	private final String timestamp = "testTimestamp";
+	private final int likes = 0;
 
 	@BeforeEach
 	void setUp() {
@@ -57,7 +59,8 @@ class ChatServiceTest {
 			"Test User",
 			userId,
 			sessionId,
-			timestamp
+			timestamp,
+			likes
 		);
 
 		chatMessage = ChatMessage.builder()
@@ -100,6 +103,25 @@ class ChatServiceTest {
 		chatService.likeMessage(userId, messageId);
 
 		verify(chatLikeRepository, times(1)).likeMessage(userId, messageId);
+	}
+
+	@Test
+	void likeMessage_shouldPublishLikeUpdateToRedisPubSub() {
+		// Given
+		when(chatLikeRepository.hasLiked(userId, messageId)).thenReturn(false);
+		doNothing().when(chatLikeRepository).likeMessage(userId, messageId);
+		when(chatLikeRepository.getLikeCount(messageId)).thenReturn(5);
+
+		// When
+		chatService.likeMessage(userId, messageId);
+
+		// Then
+		ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+		verify(redisTemplate).convertAndSend(eq("chat-likes"), messageCaptor.capture());
+
+		String publishedMessage = messageCaptor.getValue();
+		assertThat(publishedMessage).contains("\"messageId\": \"" + messageId + "\"");
+		assertThat(publishedMessage).contains("\"likes\": 5");
 	}
 
 	// 이미 좋아요를 누른 상태에서 다시 누르면 예외가 발생하는지 확인
@@ -164,9 +186,9 @@ class ChatServiceTest {
 		// Given
 		when(chatRepository.existsBySessionId(String.valueOf(1L))).thenReturn(true);
 		when(chatRepository.getRecentMessages(String.valueOf(1L))).thenReturn(Arrays.asList(
-			new ChatMessageDto("msg1", ChatCategory.QUESTION, "Question 1", "Alice", "user1", 1L, "timestamp1"),
-			new ChatMessageDto("msg2", ChatCategory.QUESTION, "Question 2", "Bob", "user2", 1L, "timestamp2"),
-			new ChatMessageDto("msg3", ChatCategory.GENERAL, "General message", "Charlie", "user3", 1L, "timestamp3")
+			new ChatMessageDto("msg1", ChatCategory.QUESTION, "Question 1", "Alice", "user1", 1L, "timestamp1", 1),
+			new ChatMessageDto("msg2", ChatCategory.QUESTION, "Question 2", "Bob", "user2", 1L, "timestamp2", 1),
+			new ChatMessageDto("msg3", ChatCategory.GENERAL, "General message", "Charlie", "user3", 1L, "timestamp3", 1)
 		));
 
 		when(chatLikeRepository.getLikeCount("like:msg1")).thenReturn(10);

@@ -16,6 +16,7 @@ public class ChatMessageDto {
 	private String userId;
 	private Long sessionId;
 	private String timestamp;
+	private int likes;
 
 	@JsonCreator
 	public ChatMessageDto(
@@ -25,7 +26,8 @@ public class ChatMessageDto {
 		@JsonProperty("name") String name,
 		@JsonProperty("userId") String userId,
 		@JsonProperty("sessionId") Long sessionId,
-		@JsonProperty("timestamp") String timestamp) {
+		@JsonProperty("timestamp") String timestamp,
+		@JsonProperty("likes") int likes) {
 		this.messageId = messageId;
 		this.category = category;
 		this.message = message;
@@ -33,5 +35,6 @@ public class ChatMessageDto {
 		this.userId = userId;
 		this.sessionId = sessionId;
 		this.timestamp = timestamp;
+		this.likes = likes;
 	}
 }

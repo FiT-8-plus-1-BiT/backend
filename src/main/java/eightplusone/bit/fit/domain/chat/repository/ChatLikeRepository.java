@@ -1,9 +1,11 @@
 package eightplusone.bit.fit.domain.chat.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@Slf4j
 public class ChatLikeRepository {
 	private final RedisTemplate<String, Object> redisTemplate;
 
@@ -14,6 +16,8 @@ public class ChatLikeRepository {
 	// 좋아요 추가
 	public void likeMessage(String userId, String messageId) {
 		String likeKey = "like:" + messageId;
+
+		// 좋아요 추가
 		redisTemplate.opsForSet().add(likeKey, userId);
 	}
 

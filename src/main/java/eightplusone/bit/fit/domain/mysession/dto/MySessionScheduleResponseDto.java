@@ -26,10 +26,12 @@ public class MySessionScheduleResponseDto {
 	private final Integer standardCount;
 	@Schema(description = "오디오 채널방 번호", example = "1")
 	private final Integer audioChannel;
+	@Schema(description = "담은 스케줄인지 여부", example = "true")
+	private final Boolean isMySchedule;
 
 	@Builder
 	private MySessionScheduleResponseDto(Long sessionId, String title, String sessionImage, String summary,
-		String startTime, String endTime, Integer standardCount, Integer audioChannel) {
+		String startTime, String endTime, Integer standardCount, Integer audioChannel, Boolean isMySchedule) {
 		this.sessionId = sessionId;
 		this.title = title;
 		this.sessionImage = sessionImage;
@@ -38,9 +40,10 @@ public class MySessionScheduleResponseDto {
 		this.endTime = endTime;
 		this.standardCount = standardCount;
 		this.audioChannel = audioChannel;
+		this.isMySchedule = isMySchedule;
 	}
 
-	public static MySessionScheduleResponseDto from(Session session) {
+	public static MySessionScheduleResponseDto from(Session session, Boolean isMySchedule) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMddHHmm");
 		return MySessionScheduleResponseDto.builder()
 			.sessionId(session.getSessionId())
@@ -51,6 +54,7 @@ public class MySessionScheduleResponseDto {
 			.endTime(session.getEndTime().format(formatter))
 			.standardCount(session.getStandardCount())
 			.audioChannel(session.getAudioChannel())
+			.isMySchedule(isMySchedule)
 			.build();
 	}
 }

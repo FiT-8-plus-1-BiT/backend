@@ -4,6 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import eightplusone.bit.fit.domain.tag.entity.Tag;
 
-public interface TagRepository extends JpaRepository<Tag, Long>, TagRepositoryCustom {
-	Tag findBySession_SessionId(Long sessionId);
+public interface TagRepository extends JpaRepository<Tag, Long> {
 }

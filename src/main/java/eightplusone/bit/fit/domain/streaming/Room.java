@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.annotation.PreDestroy;
 
 import org.kurento.client.Continuation;
+import org.kurento.client.DtlsConnectionState;
 import org.kurento.client.MediaPipeline;
 import org.kurento.client.WebRtcEndpoint;
 
@@ -41,37 +42,79 @@ public class Room implements Closeable {
 		this.close();
 	}
 
-	public synchronized boolean setPresenter(UserSession presenter) throws InterruptedException {
-		if (this.presenterUserSession == null) {
-			this.presenterUserSession = presenter;
-			if (pipeline == null) {
-				log.error("Pipeline is NULL before creating WebRtcEndpoint.");
-				return false;
-			}
-			WebRtcEndpoint webRtcEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
-			presenterUserSession.setWebRtcEndpoint(webRtcEndpoint);
-			Thread.sleep(100);
-			if (presenterUserSession.getWebRtcEndpoint() == null) {
-				log.error("WebRtcEndpoint is NULL after creation. Something went wrong.");
-				return false;
-			}
-
-			log.info("Presenter WebRtcEndpoint successfully created in room: {}", name);
-			return true;
+	public synchronized boolean setPresenter(UserSession presenter) {
+		if (this.presenterUserSession != null) {
+			// 이미 발표자가 존재하는 경우
+			return false;
 		}
-		return false;
+		this.presenterUserSession = presenter;
+
+		if (pipeline == null) {
+			log.error("Pipeline is NULL before creating WebRtcEndpoint.");
+			return false;
+		}
+
+		// WebRtcEndpoint 생성
+		WebRtcEndpoint webRtcEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
+		presenterUserSession.setWebRtcEndpoint(webRtcEndpoint);
+
+		// MediaSessionStartedListener: 실제 세션이 시작되었을 때 호출
+		webRtcEndpoint.addMediaSessionStartedListener(event -> {
+			log.info("[{}] Presenter media session started.", name);
+			// 필요시 여기에 추가 로직
+			// ex) 특정 상태 값 업데이트, 다른 사용자에게 알림 등
+		});
+
+		// MediaFlowInStateChangedListener: 미디어가 들어오기 시작(FLOWING)하면 호출
+		webRtcEndpoint.addMediaFlowInStateChangedListener(event -> {
+			switch (event.getState()) {
+				case FLOWING:
+					log.info("[{}] Presenter media IN flow is now FLOWING.", name);
+					break;
+				case NOT_FLOWING:
+					log.warn("[{}] Presenter media IN flow is NOT_FLOWING.", name);
+					break;
+				default:
+					break;
+			}
+		});
+
+		// MediaFlowOutStateChangedListener: 미디어가 나가기 시작(FLOWING)하면 호출
+		webRtcEndpoint.addMediaFlowOutStateChangedListener(event -> {
+			switch (event.getState()) {
+				case FLOWING:
+					log.info("[{}] Presenter media OUT flow is now FLOWING.", name);
+					break;
+				case NOT_FLOWING:
+					log.warn("[{}] Presenter media OUT flow is NOT_FLOWING.", name);
+					break;
+				default:
+					break;
+			}
+		});
+
+		webRtcEndpoint.addIceCandidateFoundListener(event -> {
+			String candidateStr = event.getCandidate().getCandidate();
+			log.info("[Presenter] ICE candidate found: {}", candidateStr);
+		});
+
+		log.info("Presenter WebRtcEndpoint successfully created in room: {}", name);
+		return true;
 	}
 
 	public synchronized boolean addViewer(UserSession viewer, String roomName) {
 		if (this.presenterUserSession == null) {
-			return false; // 발표자가 있어야만 시청자가 참가 가능
+			// 발표자가 없어 시청자 참가 불가
+			return false;
 		}
-		// WebRtcEndpoint 생성 추가
+		// WebRtcEndpoint 생성
 		WebRtcEndpoint viewerEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
 
-		viewerEndpoint.setMaxVideoRecvBandwidth(0); // 비디오 수신 완전 차단
-		viewerEndpoint.setMaxAudioRecvBandwidth(500); // 오디오 수신 허용(고음질 음성 통화 수준)
+		// 미디어 대역폭 설정 (오디오만 수신 허용 등)
+		viewerEndpoint.setMaxVideoRecvBandwidth(0);
+		viewerEndpoint.setMaxAudioRecvBandwidth(500);
 
+		// UserSession에 WebRtcEndpoint 연결
 		viewer.setWebRtcEndpoint(viewerEndpoint);
 
 		if (viewer.getWebRtcEndpoint() == null) {
@@ -79,12 +122,69 @@ public class Room implements Closeable {
 			return false;
 		}
 
-		presenterUserSession.getWebRtcEndpoint().connect(viewerEndpoint); // Presenter와 연결
-		log.info("Viewer {} connected to presenter in room {}", viewer.getSession().getId(), name);
+		// 이벤트 리스너 등록
+		viewerEndpoint.addMediaSessionStartedListener(event -> {
+			log.info("[{}] Viewer media session started. sessionId={}",
+				this.name, viewer.getSession().getId());
+		});
+
+		viewerEndpoint.addMediaFlowInStateChangedListener(event -> {
+			switch (event.getState()) {
+				case FLOWING:
+					log.info("[{}] Viewer IN flow is now FLOWING. sessionId={}",
+						this.name, viewer.getSession().getId());
+					break;
+				case NOT_FLOWING:
+					log.warn("[{}] Viewer IN flow is NOT_FLOWING. sessionId={}",
+						this.name, viewer.getSession().getId());
+					break;
+				default:
+					break;
+			}
+		});
+
+		viewerEndpoint.addMediaFlowOutStateChangedListener(event -> {
+			switch (event.getState()) {
+				case FLOWING:
+					log.info("[{}] Viewer OUT flow is now FLOWING. sessionId={}",
+						this.name, viewer.getSession().getId());
+					break;
+				case NOT_FLOWING:
+					log.warn("[{}] Viewer OUT flow is NOT_FLOWING. sessionId={}",
+						this.name, viewer.getSession().getId());
+					break;
+				default:
+					break;
+			}
+		});
+
+		viewerEndpoint.addDtlsConnectionStateChangeListener(event -> {
+			DtlsConnectionState currentState = event.getState();
+			log.info("[Viewer] DTLS state changed to: {}", currentState);
+			switch (currentState) {
+				case CONNECTED:
+					log.info("[Viewer] DTLS CONNECTED for sessionId={}", viewer.getSession().getId());
+					break;
+				case FAILED:
+					log.warn("[Viewer] DTLS FAILED for sessionId={}", viewer.getSession().getId());
+					break;
+				default:
+					break;
+			}
+		});
+
+		// Presenter -> Viewer 연결
+		presenterUserSession.getWebRtcEndpoint().connect(viewerEndpoint);
+		log.info("Viewer {} connected to presenter in room {}",
+			viewer.getSession().getId(), this.name);
+
+		// viewers 목록에 등록
 		viewers.put(viewer.getSession().getId(), viewer);
 		log.info("현재 viewer 수: {}", viewers.size());
 
+		// 예시: 세션 정보 업데이트 후 브로드캐스트
 		sessionService.updateAndBroadcastIfChanged(Integer.valueOf(roomName));
+
 		return true;
 	}
 
@@ -123,8 +223,12 @@ public class Room implements Closeable {
 		if (presenterUserSession == null || presenterUserSession.getWebRtcEndpoint() == null) {
 			throw new IllegalStateException("Presenter is not set up properly.");
 		}
+		// SDP Offer 처리
 		String sdpAnswer = presenterUserSession.getWebRtcEndpoint().processOffer(sdpOffer);
+		//ICE gathering 시작
 		presenterUserSession.getWebRtcEndpoint().gatherCandidates();
+		// 이제 WebRtcEndpoint가 ICE Candidate를 수용할 준비가 되었다고 표시
+		presenterUserSession.markEndpointReady();
 		return sdpAnswer;
 	}
 
@@ -133,8 +237,13 @@ public class Room implements Closeable {
 			throw new IllegalStateException("Viewer is not registered in the room.");
 		}
 		WebRtcEndpoint viewerEndpoint = viewer.getWebRtcEndpoint();
+		// SDP Offer 처리
 		String sdpAnswer = viewerEndpoint.processOffer(sdpOffer);
+		// ICE gathering 시작
 		viewerEndpoint.gatherCandidates();
+		// viewer endpoint도 준비 완료
+		viewer.markEndpointReady();
+
 		return sdpAnswer;
 	}
 

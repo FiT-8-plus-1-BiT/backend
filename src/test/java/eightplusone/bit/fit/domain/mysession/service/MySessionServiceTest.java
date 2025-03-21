@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,13 @@ class MySessionServiceTest {
 	@Autowired
 	MySessionRepository mySessionRepository;
 
+	@BeforeEach
+	void cleanUp() {
+		mySessionRepository.deleteAllInBatch();
+		sessionRepository.deleteAllInBatch();
+		userRepository.deleteAllInBatch();
+	}
+	
 	@Test
 	@DisplayName("사용자는 강의 미리 담기를 한다")
 	void register() {

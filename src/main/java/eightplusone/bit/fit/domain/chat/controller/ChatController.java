@@ -88,4 +88,14 @@ public class ChatController {
 	) {
 		return chatService.getSortedQuestionMessages(Long.valueOf(sessionId));
 	}
+
+	@GetMapping("/likes/{userId}/{sessionId}/{messageId}")
+	public ResponseEntity<Boolean> hasLiked(
+		@PathVariable String userId,
+		@PathVariable Long sessionId,
+		@PathVariable String messageId
+	) {
+		boolean hasLiked = chatService.hasLiked(userId, sessionId, messageId);
+		return ResponseEntity.ok(hasLiked);
+	}
 }

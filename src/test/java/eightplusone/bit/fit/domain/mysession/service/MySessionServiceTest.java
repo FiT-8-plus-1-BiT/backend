@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -84,6 +85,7 @@ class MySessionServiceTest {
 		//when
 		List<MySessionScheduleResponseDto> responseDtos = mySessionService.findRegisteredMySessions(
 			user.getEmail());
+		responseDtos.sort(Comparator.comparing(MySessionScheduleResponseDto::getSessionId));
 
 		//then
 		assertAll(

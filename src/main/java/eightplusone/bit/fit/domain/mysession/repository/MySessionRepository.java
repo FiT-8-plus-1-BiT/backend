@@ -11,7 +11,7 @@ import eightplusone.bit.fit.domain.mysession.enums.MySessionType;
 
 public interface MySessionRepository extends JpaRepository<MySession, Long> {
 	@Query(""" 
-		select ms from MySession ms left join fetch ms.session where ms.user.id = :userId and ms.type = :type order by ms.session.sessionId 
+		select ms from MySession ms left join fetch ms.session where ms.user.id = :userId and ms.type = :type 
 		""")
 	List<MySession> findSessionsByUserIdAndType(Long userId, MySessionType type);
 

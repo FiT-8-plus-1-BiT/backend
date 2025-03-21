@@ -40,14 +40,15 @@ public class MySessionService {
 		User user = userRepository.findLoginUserByEmail(email);
 
 		// 등록세션 조회
-		List<Long> mySessionIds = mySessionRepository.findSessionsByUserIdAndType(user.getId(), MySessionType.REGISTER)
+		List<Long> mySessionIds = mySessionRepository.findSessionsByUserIdAndType(user.getId(),
+				MySessionType.REGISTER)
 			.stream()
 			.map(mySession -> mySession.getSession().getSessionId())
 			.toList();
 
 		// 전체세션조회
 		List<Session> allSessions = sessionRepository.findAll();
-		
+
 		return allSessions.stream()
 			.map(session -> MySessionScheduleResponseDto.from(session, mySessionIds.contains(session.getSessionId())))
 			.collect(Collectors.toList());

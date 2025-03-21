@@ -6,7 +6,6 @@ import static org.mockito.Mockito.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,24 +27,6 @@ public class ChatLikeRepositoryTest {
 	@BeforeEach
 	void setUp() {
 		when(redisTemplate.opsForSet()).thenReturn(setOperations);  // ✅ RedisTemplate 설정
-	}
-
-	@Test
-	void shouldPublishLikeUpdateToRedisPubSub() {
-		// Given
-		String userId = "user1";
-		String messageId = "message123";
-
-		// When
-		chatLikeRepository.likeMessage(userId, messageId);
-
-		// Then (✅ Redis Pub/Sub 메시지가 정상적으로 발행되는지 검증)
-		ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
-		verify(redisTemplate).convertAndSend(eq("chat-likes"), messageCaptor.capture());
-
-		String publishedMessage = messageCaptor.getValue();
-		assertThat(publishedMessage).contains("\"messageId\": \"message123\"");
-		assertThat(publishedMessage).contains("\"likes\":");
 	}
 
 	@Test

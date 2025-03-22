@@ -75,4 +75,12 @@ public class RoomService {
 
 		return sdpAnswer;
 	}
+
+	public void addPresenterIceCandidate(String roomId, IceCandidate candidate) {
+		AudioRoom room = rooms.get(roomId);
+		if (room != null && room.getPresenterEndpoint() != null) {
+			// 발표자가 보낸 ICE 후보를 Kurento에 추가
+			room.getPresenterEndpoint().addIceCandidate(candidate);
+		}
+	}
 }

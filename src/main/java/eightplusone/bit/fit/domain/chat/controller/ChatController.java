@@ -64,21 +64,23 @@ public class ChatController {
 	}
 
 	@Operation(summary = "메시지 좋아요", description = "특정 메시지에 좋아요를 추가합니다.")
-	@PostMapping("/like/{messageId}")
+	@PostMapping("/like/{sessionId}/{messageId}")
 	public void likeMessage(
+		@Parameter(description = "세션 ID", example = "1234") @PathVariable Long sessionId,
 		@Parameter(description = "메시지 ID", example = "msg123") @PathVariable String messageId,
 		@Parameter(description = "사용자 ID", example = "user123") @RequestParam String userId
 	) {
-		chatService.likeMessage(userId, messageId);
+		chatService.likeMessage(userId, sessionId, messageId);
 	}
 
 	@Operation(summary = "메시지 좋아요 취소", description = "특정 메시지의 좋아요를 취소합니다.")
-	@PostMapping("/unlike/{messageId}")
+	@PostMapping("/unlike/{sessionId}/{messageId}")
 	public void unlikeMessage(
+		@Parameter(description = "세션 ID", example = "1234") @PathVariable Long sessionId,
 		@Parameter(description = "메시지 ID", example = "msg123") @PathVariable String messageId,
 		@Parameter(description = "사용자 ID", example = "user123") @RequestParam String userId
 	) {
-		chatService.unlikeMessage(userId, messageId);
+		chatService.unlikeMessage(userId, sessionId, messageId);
 	}
 
 	@Operation(summary = "질문 메시지 정렬", description = "특정 세션의 질문 메시지를 좋아요 순으로 정렬하여 반환합니다.")
@@ -87,5 +89,16 @@ public class ChatController {
 		@Parameter(description = "채팅 세션 ID", example = "1234") @PathVariable String sessionId
 	) {
 		return chatService.getSortedQuestionMessages(Long.valueOf(sessionId));
+	}
+
+	@Operation(summary = "좋아요 존재 여부 확인", description = "사용자가 특정 세션의 특정 메시지에 좋아요를 눌렀는지 확인합니다.")
+	@GetMapping("/likes/{userId}/{sessionId}/{messageId}")
+	public ResponseEntity<Boolean> hasLiked(
+		@PathVariable String userId,
+		@PathVariable Long sessionId,
+		@PathVariable String messageId
+	) {
+		boolean hasLiked = chatService.hasLiked(userId, sessionId, messageId);
+		return ResponseEntity.ok(hasLiked);
 	}
 }

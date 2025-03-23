@@ -136,4 +136,47 @@ public class RoomService {
 		}
 	}
 
+	// 발표자 퇴장 -> 청중 모두 연결 끊어짐.
+	public void leavePresenter(String roomId) {
+		AudioRoom room = rooms.get(roomId);
+		if (room != null) {
+			// 발표자 엔드포인트 해제
+			if (room.getPresenterEndpoint() != null) {
+				room.getPresenterEndpoint().release();
+				room.setPresenterEndpoint(null);
+				log.info("[Presenter] Released presenter endpoint for room: {}", roomId);
+			}
+			// 모든 청중 엔드포인트 해제
+			for (Map.Entry<String, WebRtcEndpoint> entry : room.getAudienceEndpoints().entrySet()) {
+				entry.getValue().release();
+				log.info("[Audience] Released audience endpoint for {} in room: {}", entry.getKey(), roomId);
+			}
+			room.getAudienceEndpoints().clear();
+
+			// MediaPipeline 해제 후 방 제거
+			room.getPipeline().release();
+			rooms.remove(roomId);
+			log.info("[Room] Removed room {} because presenter left and all audience endpoints were released.", roomId);
+		}
+	}
+
+	// 청중 퇴장
+	public void leaveAudience(String roomId, String audienceEmail) {
+		AudioRoom room = rooms.get(roomId);
+		if (room != null) {
+			WebRtcEndpoint endpoint = room.getAudienceEndpoints().get(audienceEmail);
+			if (endpoint != null) {
+				endpoint.release();
+				room.getAudienceEndpoints().remove(audienceEmail);
+				log.info("[Audience] Released audience endpoint for {} in room: {}", audienceEmail, roomId);
+			}
+			// 발표자도 없고 청중도 없으면 MediaPipeline 해제 후 방 제거
+			if (room.getPresenterEndpoint() == null && room.getAudienceEndpoints().isEmpty()) {
+				room.getPipeline().release();
+				rooms.remove(roomId);
+				log.info("[Room] Removed room {} as no participants remain.", roomId);
+			}
+		}
+	}
+
 }

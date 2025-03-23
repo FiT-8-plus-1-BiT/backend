@@ -79,4 +79,26 @@ public class StreamingController {
 		IceCandidate candidate = new IceCandidate(dto.getCandidate(), dto.getSdpMid(), dto.getSdpMLineIndex());
 		roomService.addAudienceIceCandidate(roomId, principal.getName(), candidate);
 	}
+
+	/**
+	 * 발표자 나가기 요청 처리
+	 */
+	@MessageMapping("/room/{roomId}/presenter/leave")
+	public void handlePresenterLeave(@DestinationVariable String roomId) {
+		log.info("[Presenter] Leave request received for room: {}", roomId);
+		roomService.leavePresenter(roomId);
+	}
+
+	/**
+	 * 청중 나가기 요청 처리
+	 */
+	@MessageMapping("/room/{roomId}/audience/leave")
+	public void handleAudienceLeave(
+		@DestinationVariable String roomId,
+		@Header("simpUser") Principal principal
+	) {
+		log.info("[Audience] Leave request received for {} in room: {}", principal.getName(), roomId);
+		roomService.leaveAudience(roomId, principal.getName());
+	}
+
 }

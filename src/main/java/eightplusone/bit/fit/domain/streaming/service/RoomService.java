@@ -104,11 +104,7 @@ public class RoomService {
 		if (presenterEndpoint != null) {
 			presenterEndpoint.connect(audienceEndpoint);
 		}
-
-		int audioChannel = Integer.parseInt(roomId);
-		sessionService.checkIn(audienceEmail);
-		sessionService.updateAndBroadcastIfChanged(audioChannel);
-
+		
 		// 청중 ICE 후보 -> 클라이언트
 		audienceEndpoint.addIceCandidateFoundListener(event -> {
 			IceCandidate candidate = event.getCandidate();

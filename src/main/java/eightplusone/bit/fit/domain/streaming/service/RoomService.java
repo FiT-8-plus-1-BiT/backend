@@ -104,7 +104,7 @@ public class RoomService {
 		if (presenterEndpoint != null) {
 			presenterEndpoint.connect(audienceEndpoint);
 		}
-		
+
 		// 청중 ICE 후보 -> 클라이언트
 		audienceEndpoint.addIceCandidateFoundListener(event -> {
 			IceCandidate candidate = event.getCandidate();
@@ -123,12 +123,13 @@ public class RoomService {
 	}
 
 	// 청중 ICE 추가
-	public void addAudienceIceCandidate(String roomId, String audienceId, IceCandidate candidate) {
+	public void addAudienceIceCandidate(String roomId, String audienceEmail, IceCandidate candidate) {
 		AudioRoom room = rooms.get(roomId);
-		if (room == null)
+		if (room == null) {
 			return;
+		}
 
-		WebRtcEndpoint endpoint = room.getAudienceEndpoints().get(audienceId);
+		WebRtcEndpoint endpoint = room.getAudienceEndpoints().get(audienceEmail);
 		if (endpoint != null) {
 			log.info("[Audience] addIceCandidate: {}", candidate);
 			endpoint.addIceCandidate(candidate);

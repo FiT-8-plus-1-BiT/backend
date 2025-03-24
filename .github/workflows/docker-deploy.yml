@@ -99,6 +99,10 @@ jobs:
             add_env_var "SPRING_DATASOURCE_USERNAME" "${{ secrets.SPRING_DATASOURCE_USERNAME }}"
             add_env_var "SPRING_DATASOURCE_PASSWORD" "${{ secrets.SPRING_DATASOURCE_PASSWORD }}"
             add_env_var "KURENTO_URL" "${{ secrets.KURENTO_URL }}"
+            add_env_var "AWS_ACCESS_KEY_ID" "${{ secrets.AWS_ACCESS_KEY_ID }}"
+            add_env_var "AWS_SECRET_ACCESS_KEY" "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            add_env_var "AWS_REGION" "${{ secrets.AWS_REGION }}"
+            add_env_var "AWS_S3_BUCKET" "${{ secrets.AWS_S3_BUCKET }}"
             
             echo "Stopping and removing old containers..."
             sudo docker ps -aq | xargs -r sudo docker rm -f  # 실행 중인 컨테이너가 없으면 오류 방지

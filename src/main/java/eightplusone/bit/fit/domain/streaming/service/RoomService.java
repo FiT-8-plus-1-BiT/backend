@@ -73,6 +73,8 @@ public class RoomService {
 		// ICE candidate 수신 대기
 		presenterEndpoint.gatherCandidates();
 
+		// 세션 라이브 상태 반영
+		sessionService.activateSessionLive(Integer.valueOf(roomId));
 		return sdpAnswer;
 	}
 
@@ -119,6 +121,11 @@ public class RoomService {
 
 		String sdpAnswer = audienceEndpoint.processOffer(sdpOffer);
 		audienceEndpoint.gatherCandidates();
+
+		// 청중 입장 혼잡도 최신화
+		Integer audioChannel = Integer.valueOf(roomId);
+		sessionService.updateSessionUserAudioChannel(audienceEmail, audioChannel);
+		sessionService.updateAndBroadcastIfChanged(audioChannel);
 		return sdpAnswer;
 	}
 
@@ -157,6 +164,9 @@ public class RoomService {
 			room.getPipeline().release();
 			rooms.remove(roomId);
 			log.info("[Room] Removed room {} because presenter left and all audience endpoints were released.", roomId);
+
+			// 혼잡도 데이터 초기화
+			sessionService.deleteSessionData(Integer.valueOf(roomId));
 		}
 	}
 
@@ -169,6 +179,10 @@ public class RoomService {
 				endpoint.release();
 				room.getAudienceEndpoints().remove(audienceEmail);
 				log.info("[Audience] Released audience endpoint for {} in room: {}", audienceEmail, roomId);
+
+				// 청중 퇴장 혼잡도 최신화
+				sessionService.updateSessionUserAudioChannel(audienceEmail, null);
+				sessionService.updateAndBroadcastIfChanged(Integer.valueOf(roomId));
 			}
 			// 발표자도 없고 청중도 없으면 MediaPipeline 해제 후 방 제거
 			if (room.getPresenterEndpoint() == null && room.getAudienceEndpoints().isEmpty()) {
@@ -178,5 +192,4 @@ public class RoomService {
 			}
 		}
 	}
-
 }

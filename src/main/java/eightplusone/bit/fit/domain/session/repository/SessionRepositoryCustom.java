@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import eightplusone.bit.fit.domain.tag.dto.TagDto;
 
 public interface SessionRepositoryCustom {
-	Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto, @Nullable String email);
+	Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto, @Nullable Long userId);
 
-	List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable String email);
+	List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable Long userId);
 }

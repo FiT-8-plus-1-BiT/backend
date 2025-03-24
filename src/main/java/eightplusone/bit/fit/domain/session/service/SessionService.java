@@ -20,6 +20,8 @@ import eightplusone.bit.fit.domain.speaker.dto.SpeakerResponseDto;
 import eightplusone.bit.fit.domain.speaker.entity.Speaker;
 import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import eightplusone.bit.fit.domain.tag.entity.Tag;
+import eightplusone.bit.fit.domain.user.entity.User;
+import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +31,7 @@ public class SessionService {
 
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final SessionRepository sessionRepository;
+	private final UserRepository userRepository;
 	private final String SESSION_CONGESTION_KEY = "session_congestion";
 	private final String SESSION_USER_KEY = "session_user";
 
@@ -103,16 +106,22 @@ public class SessionService {
 		}
 	}
 
-	public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagDto tagDto) {
+	private Long getAuthenticatedUserId() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String email = null;
 
-		if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(
-			authentication.getPrincipal())) {
-			email = authentication.getName();
+		if (authentication == null || !authentication.isAuthenticated()
+			|| "anonymousUser".equals(authentication.getPrincipal())) {
+			return null;
 		}
 
-		Page<Object[]> sessions = sessionRepository.tagFilterAndSearch(pageable, tagDto, email);
+		String email = authentication.getName();
+		User user = userRepository.findLoginUserByEmail(email);
+		return user != null ? user.getId() : null;
+	}
+
+	public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagDto tagDto) {
+		Long userId = getAuthenticatedUserId();
+		Page<Object[]> sessions = sessionRepository.tagFilterAndSearch(pageable, tagDto, userId);
 
 		return sessions.map(session -> {
 			return SessionListResponseDto.from(
@@ -125,15 +134,9 @@ public class SessionService {
 	}
 
 	public List<SessionListResponseDto> getLiveSessions() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String email = null;
+		Long userId = getAuthenticatedUserId();
 
-		if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(
-			authentication.getPrincipal())) {
-			email = authentication.getName();
-		}
-
-		List<Object[]> sessions = sessionRepository.findLiveSessionsWithSpeakerAndTag(email);
+		List<Object[]> sessions = sessionRepository.findLiveSessionsWithSpeakerAndTag(userId);
 
 		return sessions.stream().map(session -> {
 			return SessionListResponseDto.from(

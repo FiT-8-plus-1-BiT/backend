@@ -14,12 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
+import eightplusone.bit.fit.domain.mysession.enums.MySessionType;
 import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import io.micrometer.common.lang.Nullable;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +32,16 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto, @Nullable String email) {
-		BooleanBuilder joinCondition = new BooleanBuilder();
-		joinCondition.and(mySession.session.eq(session));
-		if (StringUtils.hasText(email)) {
-			joinCondition.and(mySession.user.email.eq(email));
+	public Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto, @Nullable Long userId) {
+		BooleanExpression joinCondition = Expressions.FALSE;
+
+		if (userId != null) {
+			joinCondition = mySession.session.eq(session)
+				.and(mySession.user.id.eq(userId))
+				.and(mySession.type.eq(MySessionType.REGISTER));
 		}
 
+		// 그리고 그대로 쿼리 체이닝에 사용
 		List<Tuple> results = queryFactory
 			.select(session, tag, speaker, mySession.id)
 			.from(session)
@@ -93,25 +97,28 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 	}
 
 	@Override
-	public List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable String email) {
-		BooleanBuilder joinCondition = new BooleanBuilder();
-		joinCondition.and(mySession.session.eq(session));
-		if (StringUtils.hasText(email)) {
-			joinCondition.and(mySession.user.email.eq(email));
+	public List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable Long userId) {
+		BooleanExpression joinCondition = Expressions.FALSE;
+
+		if (userId != null) {
+			joinCondition = mySession.session.eq(session)
+				.and(mySession.user.id.eq(userId))
+				.and(mySession.type.eq(MySessionType.REGISTER));
 		}
 
 		LocalDateTime now = LocalDateTime.now();
 
-		List<Tuple> result = queryFactory
-			.select(session, speaker, tag, mySession.id)
+		// 그리고 그대로 쿼리 체이닝에 사용
+		List<Tuple> results = queryFactory
+			.select(session, tag, speaker, mySession.id)
 			.from(session)
-			.leftJoin(speaker).on(speaker.session.eq(session))
 			.leftJoin(tag).on(tag.session.eq(session))
+			.leftJoin(speaker).on(speaker.session.eq(session))
 			.leftJoin(mySession).on(joinCondition)
 			.where(session.startTime.loe(now), session.endTime.goe(now))
 			.fetch();
 
-		return result.stream()
+		return results.stream()
 			.map(
 				tuple -> new Object[] {tuple.get(session), tuple.get(speaker), tuple.get(tag), tuple.get(mySession.id)})
 			.toList();

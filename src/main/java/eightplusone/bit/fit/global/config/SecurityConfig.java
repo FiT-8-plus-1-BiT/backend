@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -52,12 +53,24 @@ public class SecurityConfig {
 	}
 
 	@Bean
+	@Order(1)
+	public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.securityMatcher("/fit-monitor/**")  // /fit-monitor 경로에 매칭
+			.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+			.csrf(AbstractHttpConfigurer::disable)
+			.httpBasic(AbstractHttpConfigurer::disable);
+		return http.build();
+	}
+
+	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 			.cors(corsCustomizer -> corsCustomizer.configurationSource(request -> {
 				CorsConfiguration configuration = new CorsConfiguration();
 				configuration.setAllowedOrigins(
-					List.of("https://jiangxy.github.io", allowedOrigins)); // TODO : 혼잡도 구현 끝날 경우 원본으로 되돌리기
+					List.of("https://jiangxy.github.io", allowedOrigins,
+						"http://localhost:9097")); // TODO : 혼잡도 구현 끝날 경우 원본으로 되돌리기
 				configuration.setAllowedMethods(ALLOWED_METHODS);
 				configuration.setAllowCredentials(ALLOWED_CREDENTIALS);
 				configuration.setAllowedHeaders(ALLOWED_HEADERS);

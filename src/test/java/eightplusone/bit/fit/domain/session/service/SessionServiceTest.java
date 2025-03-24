@@ -86,7 +86,7 @@ class SessionServiceTest {
 		setField(session, "audioChannel", 123);
 		setField(session, "standardCount", 10);
 
-		when(sessionRepository.findAll()).thenReturn(List.of(session));
+		when(sessionRepository.findByIsLiveTrue()).thenReturn(List.of(session));
 		when(sessionRepository.findByAudioChannel(123)).thenReturn(Optional.of(session));
 
 		when(hashOperations.values("session_user")).thenReturn(List.of("123", "123")); // 2명 접속
@@ -289,5 +289,53 @@ class SessionServiceTest {
 			() -> assertThat(result.get(1).getSpeaker().getName()).isEqualTo(speaker2.getName()),
 			() -> assertThat(result.get(1).getTags().getField()).isEqualTo(tag2.getField())
 		);
+	}
+
+	@Test
+	@DisplayName("청중의 현재 오디오 채널값을 업데이트한다")
+	void updateSessionUserAudioChannel() {
+		// given
+		String email = "test@gmail.com";
+		Integer audioChannel = 1;
+
+		// when
+		sessionService.updateSessionUserAudioChannel(email, audioChannel);
+
+		// then
+		verify(hashOperations).put("session_user", email, "1");
+	}
+
+	@Test
+	@DisplayName("청중의 오디오 채널값 초기화 및 세션의 라이브 상태를 false로 변경한다")
+	void deleteSessionData() {
+		// given
+		Integer audioChannel = 1;
+
+		Map<Object, Object> sessionUserMap = Map.of(
+			"test@gmail.com", "1",
+			"test2@gmail.com", "2"
+		);
+
+		when(hashOperations.entries("session_user")).thenReturn(sessionUserMap);
+
+		// when
+		sessionService.deleteSessionData(audioChannel);
+
+		// then
+		verify(hashOperations).put("session_user", "test@gmail.com", "null");
+		verify(sessionRepository).updateIsLiveByAudioChannel(audioChannel, false);
+	}
+
+	@Test
+	@DisplayName("세션을 라이브 상태로 변경한다")
+	void activateSessionLive() {
+		// give
+		Integer audioChannel = 1;
+
+		// when
+		sessionService.activateSessionLive(audioChannel);
+
+		// then
+		verify(sessionRepository).updateIsLiveByAudioChannel(audioChannel, true);
 	}
 }

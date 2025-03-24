@@ -103,17 +103,6 @@ public class SessionService {
 		}
 	}
 
-	// public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagDto tagDto) {
-	// 	Page<Object[]> sessions = sessionRepository.tagFilterAndSearch(pageable, tagDto);
-	//
-	// 	return sessions.map(session -> {
-	// 		return SessionListResponseDto.from(
-	// 			(Session)session[0],
-	// 			SpeakerResponseDto.from((Speaker)session[2]),
-	// 			TagDto.from((Tag)session[1])
-	// 		);
-	// 	});
-	// }
 	public Page<SessionListResponseDto> getSessionsList(Pageable pageable, TagDto tagDto) {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String email = null;
@@ -135,15 +124,24 @@ public class SessionService {
 		});
 	}
 
-	// public List<SessionListResponseDto> getLiveSessions() {
-	// 	List<Object[]> sessions = sessionRepository.findLiveSessionsWithSpeakerAndTag();
-	//
-	// 	return sessions.stream().map(session -> {
-	// 		return SessionListResponseDto.from(
-	// 			(Session)session[0],
-	// 			SpeakerResponseDto.from((Speaker)session[1]),
-	// 			TagDto.from((Tag)session[2])
-	// 		);
-	// 	}).toList();
-	// }
+	public List<SessionListResponseDto> getLiveSessions() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String email = null;
+
+		if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(
+			authentication.getPrincipal())) {
+			email = authentication.getName();
+		}
+
+		List<Object[]> sessions = sessionRepository.findLiveSessionsWithSpeakerAndTag(email);
+
+		return sessions.stream().map(session -> {
+			return SessionListResponseDto.from(
+				(Session)session[0],
+				SpeakerResponseDto.from((Speaker)session[1]),
+				TagDto.from((Tag)session[2]),
+				session[3] != null
+			);
+		}).toList();
+	}
 }

@@ -12,5 +12,5 @@ import eightplusone.bit.fit.domain.tag.dto.TagDto;
 public interface SessionRepositoryCustom {
 	Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto, @Nullable String email);
 
-	List<Object[]> findLiveSessionsWithSpeakerAndTag();
+	List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable String email);
 }

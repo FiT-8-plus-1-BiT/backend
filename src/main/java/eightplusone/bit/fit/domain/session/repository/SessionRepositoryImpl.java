@@ -43,10 +43,6 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 			.from(session)
 			.leftJoin(tag).on(tag.session.eq(session))
 			.leftJoin(speaker).on(speaker.session.eq(session))
-			// .leftJoin(mySession).on(
-			// 	mySession.session.eq(session),
-			// 	containUser(email)
-			// )
 			.leftJoin(mySession).on(joinCondition)
 			.where(
 				containField(dto.getField()),
@@ -97,19 +93,27 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 	}
 
 	@Override
-	public List<Object[]> findLiveSessionsWithSpeakerAndTag() {
+	public List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable String email) {
+		BooleanBuilder joinCondition = new BooleanBuilder();
+		joinCondition.and(mySession.session.eq(session));
+		if (StringUtils.hasText(email)) {
+			joinCondition.and(mySession.user.email.eq(email));
+		}
+
 		LocalDateTime now = LocalDateTime.now();
 
 		List<Tuple> result = queryFactory
-			.select(session, speaker, tag)
+			.select(session, speaker, tag, mySession.id)
 			.from(session)
 			.leftJoin(speaker).on(speaker.session.eq(session))
 			.leftJoin(tag).on(tag.session.eq(session))
+			.leftJoin(mySession).on(joinCondition)
 			.where(session.startTime.loe(now), session.endTime.goe(now))
 			.fetch();
 
 		return result.stream()
-			.map(tuple -> new Object[] {tuple.get(session), tuple.get(speaker), tuple.get(tag)})
+			.map(
+				tuple -> new Object[] {tuple.get(session), tuple.get(speaker), tuple.get(tag), tuple.get(mySession.id)})
 			.toList();
 	}
 }

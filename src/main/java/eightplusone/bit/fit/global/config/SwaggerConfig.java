@@ -17,7 +17,7 @@ import io.swagger.v3.oas.models.servers.Server;
 @Configuration
 public class SwaggerConfig {
 
-	@Value("${server.host}")
+	@Value("${springdoc.server-url}")
 	private String serverHost;
 
 	@Bean

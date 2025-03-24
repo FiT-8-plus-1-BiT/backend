@@ -56,6 +56,8 @@ dependencies {
     annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    // aws s3
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.3.0'
 }
 
 tasks.named('test') {

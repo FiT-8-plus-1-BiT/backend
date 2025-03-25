@@ -105,7 +105,7 @@ public class ChatRepositoryTest {
 
 	@Test
 	@Transactional
-		// 🔹 자동 롤백 방지
+		// 자동 롤백 방지
 	void testChatMessageExpiration() throws InterruptedException {
 		// 테스트용 세션 가져오기
 		Session session = sessionRepository.findById(sessionId).orElse(null);

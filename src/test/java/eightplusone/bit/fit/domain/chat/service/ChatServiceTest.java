@@ -13,16 +13,19 @@ import eightplusone.bit.fit.domain.chat.repository.ChatRepository;
 import eightplusone.bit.fit.domain.user.repository.UserRedisRepository;
 import eightplusone.bit.fit.global.exception.CustomException;
 import eightplusone.bit.fit.global.exception.ErrorCode;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.ZSetOperations;
 
 @ExtendWith(MockitoExtension.class)
 class ChatServiceTest {
@@ -262,31 +265,35 @@ class ChatServiceTest {
 	// 	assertThat(page.getTotalElements()).isEqualTo(3); // 전체는 3개
 	// }
 
+	@SuppressWarnings("unchecked")
 	@Test
 	void getZSetSortedQuestions_success() {
 		// given
 		String zsetKey = "questions:session:" + sessionId;
 
-		// ZSet에서 정렬된 메시지 ID 3개 반환한다고 가정
-		when(redisTemplate.opsForZSet().reverseRange(zsetKey, 0, 2))
-			.thenReturn(Set.of("msg3", "msg1", "msg2"));
+		// ZSetOperations mock
+		ZSetOperations<String, Object> zSetOps = Mockito.mock(ZSetOperations.class);
+		Mockito.when(redisTemplate.opsForZSet()).thenReturn(zSetOps);
+		Mockito.when(zSetOps.reverseRange(zsetKey, 0, 2))
+			.thenReturn(new LinkedHashSet<>(List.of("msg3", "msg1", "msg2")));
+		Mockito.when(zSetOps.score(zsetKey, "msg3")).thenReturn(10.0);
+		Mockito.when(zSetOps.score(zsetKey, "msg1")).thenReturn(5.0);
+		Mockito.when(zSetOps.score(zsetKey, "msg2")).thenReturn(2.0);
 
-		// 메시지 본문
-		when(redisTemplate.opsForValue().get("chat:message:msg3"))
+		// ValueOperations mock + doReturn().when() 방식
+		ValueOperations<String, String> valueOps = Mockito.mock(ValueOperations.class);
+		Mockito.doReturn(valueOps).when(redisTemplate).opsForValue(); // 핵심 차이점
+		Mockito.when(valueOps.get("chat:message:msg3"))
 			.thenReturn(
 				"{\"messageId\":\"msg3\",\"sessionId\":1,\"userId\":\"user3\",\"category\":\"QUESTION\",\"message\":\"Q3\",\"timestamp\":\"t3\"}");
-		when(redisTemplate.opsForValue().get("chat:message:msg1"))
+		Mockito.when(valueOps.get("chat:message:msg1"))
 			.thenReturn(
 				"{\"messageId\":\"msg1\",\"sessionId\":1,\"userId\":\"user1\",\"category\":\"QUESTION\",\"message\":\"Q1\",\"timestamp\":\"t1\"}");
-		when(redisTemplate.opsForValue().get("chat:message:msg2"))
+		Mockito.when(valueOps.get("chat:message:msg2"))
 			.thenReturn(
 				"{\"messageId\":\"msg2\",\"sessionId\":1,\"userId\":\"user2\",\"category\":\"QUESTION\",\"message\":\"Q2\",\"timestamp\":\"t2\"}");
 
-		// 좋아요 수
-		when(redisTemplate.opsForZSet().score(zsetKey, "msg3")).thenReturn(10.0);
-		when(redisTemplate.opsForZSet().score(zsetKey, "msg1")).thenReturn(5.0);
-		when(redisTemplate.opsForZSet().score(zsetKey, "msg2")).thenReturn(2.0);
-
+		// 사용자 이름
 		when(userRedisRepository.getUserName("user1")).thenReturn("User1");
 		when(userRedisRepository.getUserName("user2")).thenReturn("User2");
 		when(userRedisRepository.getUserName("user3")).thenReturn("User3");

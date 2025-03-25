@@ -231,40 +231,6 @@ class ChatServiceTest {
 		assertThat(top3.get(2).getMessageId()).isEqualTo("msg1"); // 3
 	}
 
-	// @Test
-	// void getAllQuestionMessages_success() {
-	// 	// given
-	// 	Long sessionId = 1L;
-	//
-	// 	ChatMessageDto dto1 = new ChatMessageDto("msg1", ChatCategory.QUESTION, "Q1", "User1", "user1", sessionId, "t1",
-	// 		0);
-	// 	ChatMessageDto dto2 = new ChatMessageDto("msg2", ChatCategory.QUESTION, "Q2", "User2", "user2", sessionId, "t2",
-	// 		0);
-	// 	ChatMessageDto dto3 = new ChatMessageDto("msg3", ChatCategory.QUESTION, "Q3", "User3", "user3", sessionId, "t3",
-	// 		0);
-	//
-	// 	when(chatRepository.existsBySessionId(String.valueOf(sessionId))).thenReturn(true);
-	// 	when(chatRepository.getRecentMessages(String.valueOf(sessionId))).thenReturn(List.of(dto1, dto2, dto3));
-	//
-	// 	when(userRedisRepository.getUserName("user1")).thenReturn("User1");
-	// 	when(userRedisRepository.getUserName("user3")).thenReturn("User3");
-	//
-	// 	when(chatLikeRepository.getLikeCount("like:1:msg1")).thenReturn(5);
-	// 	when(chatLikeRepository.getLikeCount("like:1:msg2")).thenReturn(2);
-	// 	when(chatLikeRepository.getLikeCount("like:1:msg3")).thenReturn(10);
-	//
-	// 	Pageable pageable = PageRequest.of(0, 2);
-	//
-	// 	// when
-	// 	Page<ChatMessageDto> page = chatService.getAllQuestionMessages(sessionId, pageable);
-	//
-	// 	// then
-	// 	assertThat(page.getContent()).hasSize(2);
-	// 	assertThat(page.getContent().get(0).getMessageId()).isEqualTo("msg3"); // 좋아요 10
-	// 	assertThat(page.getContent().get(1).getMessageId()).isEqualTo("msg1"); // 좋아요 5
-	// 	assertThat(page.getTotalElements()).isEqualTo(3); // 전체는 3개
-	// }
-
 	@SuppressWarnings("unchecked")
 	@Test
 	void getZSetSortedQuestions_success() {

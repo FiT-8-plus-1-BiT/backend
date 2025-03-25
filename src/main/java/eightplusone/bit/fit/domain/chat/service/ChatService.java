@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -189,6 +192,51 @@ public class ChatService {
 				);
 			})
 			.collect(Collectors.toList());
+	}
+
+	public Page<ChatMessageDto> getAllQuestionMessages(Long sessionId, Pageable pageable) {
+		if (!chatRepository.existsBySessionId(String.valueOf(sessionId))) {
+			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
+		}
+
+		List<Object> rawMessages = chatRepository.getRecentMessages(String.valueOf(sessionId));
+
+		List<ChatMessage> messages = rawMessages.stream()
+			.map(obj -> {
+				if (obj instanceof ChatMessageDto dto) {
+					return new ChatMessage(dto.getMessageId(), sessionId, dto.getUserId(), dto.getCategory(),
+						dto.getMessage(), dto.getTimestamp());
+				} else if (obj instanceof ChatMessage msg) {
+					return msg;
+				}
+				return null;
+			})
+			.filter(Objects::nonNull)
+			.filter(msg -> msg.getCategory() == ChatCategory.QUESTION)
+			.sorted((m1, m2) -> {
+				int likeCount1 = getLikeCount(sessionId, m1.getMessageId());
+				int likeCount2 = getLikeCount(sessionId, m2.getMessageId());
+				return Integer.compare(likeCount2, likeCount1); // 좋아요 내림차순 정렬
+			})
+			.collect(Collectors.toList());
+
+		int start = (int)pageable.getOffset();
+		int end = Math.min(start + pageable.getPageSize(), messages.size());
+
+		List<ChatMessageDto> pageContent = messages.subList(start, end).stream()
+			.map(msg -> new ChatMessageDto(
+				msg.getMessageId(),
+				msg.getCategory(),
+				msg.getMessage(),
+				userRedisRepository.getUserName(msg.getUserId()),
+				msg.getUserId(),
+				msg.getSessionId(),
+				msg.getTimestamp(),
+				getLikeCount(sessionId, msg.getMessageId())
+			))
+			.collect(Collectors.toList());
+
+		return new PageImpl<>(pageContent, pageable, messages.size());
 	}
 
 }

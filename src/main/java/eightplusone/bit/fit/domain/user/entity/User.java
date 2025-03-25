@@ -4,13 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eightplusone.bit.fit.domain.auth.enums.Role;
-import eightplusone.bit.fit.domain.image.entity.Image;
 import eightplusone.bit.fit.domain.interest.entity.MyInterest;
 import eightplusone.bit.fit.domain.mysession.entity.MySession;
 import eightplusone.bit.fit.global.base.BaseTimeEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -49,8 +47,11 @@ public class User extends BaseTimeEntity {
 	@Column(name = "years")
 	private Integer years;
 
-	@Embedded
-	private Image image;
+	@Column(name = "image_name")
+	private String imageName;
+
+	@Column(name = "image_url")
+	private String imageUrl;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "role", length = 20, nullable = false)
@@ -86,7 +87,13 @@ public class User extends BaseTimeEntity {
 		this.years = years;
 	}
 
-	public void updateProfileImage(Image image) {
-		this.image = image;
+	public void updateProfileImage(String imageName, String imageUrl) {
+		this.imageName = imageName;
+		this.imageUrl = imageUrl;
+	}
+
+	public void deleteProfileImage() {
+		this.imageName = null;
+		this.imageUrl = null;
 	}
 }

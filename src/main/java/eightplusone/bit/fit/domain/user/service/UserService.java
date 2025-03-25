@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 import eightplusone.bit.fit.domain.auth.service.OAuth2UnlinkService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
 import eightplusone.bit.fit.domain.image.dto.S3ImageDto;
-import eightplusone.bit.fit.domain.image.entity.Image;
 import eightplusone.bit.fit.domain.image.service.ImageService;
 import eightplusone.bit.fit.domain.interest.entity.Interest;
 import eightplusone.bit.fit.domain.interest.entity.MyInterest;
@@ -20,6 +19,8 @@ import eightplusone.bit.fit.domain.user.dto.UserProfileResponseDto;
 import eightplusone.bit.fit.domain.user.dto.UserProfileUpdateRequestDto;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
+import eightplusone.bit.fit.global.exception.CustomException;
+import eightplusone.bit.fit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -87,13 +88,24 @@ public class UserService {
 	@Transactional
 	public void updateProfileImage(String email, MultipartFile requestImage) {
 		User user = userRepository.findLoginUserByEmail(email);
-		String userImageUrl = user.getImage().getUrl();
+		String userImageUrl = user.getImageUrl();
 		if (userImageUrl != null) {
 			imageService.deleteFromS3(userImageUrl);
 		}
 		S3ImageDto s3ImageDto = imageService.uploadToS3(requestImage);
 		user.updateProfileImage(
-			Image.of(s3ImageDto.getUrl(), s3ImageDto.getName())
+			s3ImageDto.getName(), s3ImageDto.getUrl()
 		);
+	}
+
+	@Transactional
+	public void deleteProfileImage(String email) {
+		User user = userRepository.findLoginUserByEmail(email);
+		String userImageUrl = user.getImageUrl();
+		if (userImageUrl == null) {
+			throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
+		}
+		imageService.deleteFromS3(userImageUrl);
+		user.deleteProfileImage();
 	}
 }

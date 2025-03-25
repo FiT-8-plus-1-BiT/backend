@@ -104,4 +104,17 @@ public class UserController {
 		userService.updateProfileImage(SecurityContextHolder.getContext().getAuthentication().getName(), requestImage);
 		return ResponseEntity.status(OK).body(ResponseDto.success(OK, "회원 프로필 사진 업데이트 성공", null));
 	}
+
+	@Operation(summary = "회원 프로필 사진 삭제", description = "**성공 응답 데이터:**  null")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "201", description = "회원 프로필 사진 삭제 성공"),
+		@ApiResponse(responseCode = "401", description = "유효한 토큰이 아닙니다."),
+		@ApiResponse(responseCode = "404", description = "리소스를 찾을 수 없습니다."),
+		@ApiResponse(responseCode = "500", description = "서버 오류 입니다."),
+	})
+	@DeleteMapping("/profile/image")
+	public ResponseEntity<ResponseDto<Object>> deleteProfileImage() {
+		userService.deleteProfileImage(SecurityContextHolder.getContext().getAuthentication().getName());
+		return ResponseEntity.status(CREATED).body(ResponseDto.success(CREATED, "회원 프로필 사진 삭제 성공", null));
+	}
 }

@@ -53,7 +53,7 @@ public class UserService {
 
 	public UserAccountResponseDto getAccountInfo(String email) {
 		User user = userRepository.findLoginUserByEmail(email);
-		return UserAccountResponseDto.of(user.getName(), user.getEmail());
+		return UserAccountResponseDto.of(user.getName(), user.getEmail(), user.getImageUrl());
 	}
 
 	public UserProfileResponseDto getProfileInfo(String email) {

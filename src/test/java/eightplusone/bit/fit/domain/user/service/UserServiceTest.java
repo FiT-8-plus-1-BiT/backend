@@ -71,7 +71,10 @@ class UserServiceTest {
 	@DisplayName("회원 계정 정보를 조회한다")
 	void userAccountGet() {
 		//given
+		String profileImageName = "imageName";
+		String profileImageUrl = "imageUrl";
 		User user = UserFixture.USER_FIXTURE_1.createUser();
+		user.updateProfileImage(profileImageName, profileImageUrl);
 
 		Mockito.when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
 
@@ -81,7 +84,8 @@ class UserServiceTest {
 		//then
 		assertAll(
 			() -> assertThat(accountInfo.getName()).isEqualTo(user.getName()),
-			() -> assertThat(accountInfo.getEmail()).isEqualTo(user.getEmail())
+			() -> assertThat(accountInfo.getEmail()).isEqualTo(user.getEmail()),
+			() -> assertThat(accountInfo.getImageUrl()).isEqualTo(user.getImageUrl())
 		);
 	}
 
@@ -175,7 +179,7 @@ class UserServiceTest {
 			MyInterest.of(interest3, user));
 
 		Mockito.when(myInterestRepository.saveAll(any())).thenReturn(myInterests);
-		
+
 		//when
 		userService.updateProfileInfo(user.getEmail(), userProfileUpdateRequestDto);
 

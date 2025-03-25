@@ -15,8 +15,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
@@ -91,10 +93,6 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 		return StringUtils.hasText(level) ? tag.level.eq(level) : null;
 	}
 
-	public static BooleanExpression containUser(String email) {
-		return StringUtils.hasText(email) ? mySession.user.email.eq(email) : null;
-	}
-
 	@Override
 	public List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable Long userId) {
 		BooleanExpression joinCondition = Expressions.FALSE;
@@ -120,5 +118,38 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 			.map(
 				tuple -> new Object[] {tuple.get(session), tuple.get(speaker), tuple.get(tag), tuple.get(mySession.id)})
 			.toList();
+	}
+
+	@Override
+	public Object[] findSessionDetailWithSpeakerAndTag(Long sessionId, @Nullable Long userId) {
+		BooleanExpression joinCondition = Expressions.FALSE;
+
+		if (userId != null) {
+			joinCondition = mySession.session.eq(session)
+				.and(mySession.user.id.eq(userId))
+				.and(mySession.type.eq(MySessionType.LIKE));
+		}
+
+		// 좋아요 개수 카운트
+		var totalLikes = JPAExpressions
+			.select(mySession.count())
+			.from(mySession)
+			.where(
+				mySession.session.eq(session)
+					.and(mySession.type.eq(MySessionType.LIKE)));
+
+		var likeCount = ExpressionUtils.as(totalLikes, "likeCount");
+
+		Tuple result = queryFactory
+			.select(session, tag, speaker, mySession.id, likeCount)
+			.from(session)
+			.leftJoin(tag).on(tag.session.eq(session))
+			.leftJoin(speaker).on(speaker.session.eq(session))
+			.leftJoin(mySession).on(joinCondition)
+			.where(session.sessionId.eq(sessionId))
+			.fetchOne();
+
+		return new Object[] {result.get(session), result.get(speaker), result.get(tag), result.get(mySession.id),
+			result.get(likeCount)};
 	}
 }

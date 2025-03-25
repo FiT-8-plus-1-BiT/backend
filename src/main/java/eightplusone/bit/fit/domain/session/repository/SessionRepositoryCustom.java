@@ -13,4 +13,6 @@ public interface SessionRepositoryCustom {
 	Page<Object[]> tagFilterAndSearch(Pageable pageable, TagDto dto, @Nullable Long userId);
 
 	List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable Long userId);
+
+	Object[] findSessionDetailWithSpeakerAndTag(Long sessionId, @Nullable Long userId);
 }

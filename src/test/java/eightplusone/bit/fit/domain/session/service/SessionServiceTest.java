@@ -27,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import eightplusone.bit.fit.domain.auth.dto.CustomUserDetails;
 import eightplusone.bit.fit.domain.mysession.entity.MySession;
+import eightplusone.bit.fit.domain.session.dto.SessionDetailResponseDto;
 import eightplusone.bit.fit.domain.session.dto.SessionListResponseDto;
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
@@ -548,5 +549,64 @@ class SessionServiceTest {
 
 		// then
 		verify(sessionRepository).updateIsLiveByAudioChannel(audioChannel, true);
+	}
+
+	@Test
+	@DisplayName("세션 상세 정보를 조회한다. (로그인 X)")
+	void getSessionDetailWithoutLogin() {
+		// given
+		Long sessionId = 1L;
+		Session session = SessionFixture.SESSION_STAGE_1_FIXTURE_1.createSession();
+		setField(session, "sessionId", sessionId);
+		Speaker speaker = SpeakerFixture.SPEAKER_FIXTURE_1.createSpeaker();
+		Tag tag = TagFixture.TAG_FIXTURE_1.createTag();
+
+		Object[] results = new Object[] {session, speaker, tag, null, 10L};
+
+		when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+		when(sessionRepository.findSessionDetailWithSpeakerAndTag(eq(sessionId), isNull())).thenReturn(results);
+
+		// when
+		SessionDetailResponseDto result = sessionService.getSessionDetail(sessionId);
+
+		// then
+		assertThat(result).isNotNull();
+		assertThat(result.getTitle()).isEqualTo(session.getTitle());
+		assertThat(result.getIsLiked()).isFalse();
+	}
+
+	@Test
+	@DisplayName("세션 상세 정보를 조회한다 (로그인 O)")
+	void getSessionDetail() {
+		// given
+		User user = UserFixture.USER_FIXTURE_1.createUser();
+		setField(user, "id", 1L);
+		CustomUserDetails userDetails = new CustomUserDetails(user);
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+			userDetails, null, userDetails.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+
+		Session session = SessionFixture.SESSION_STAGE_1_FIXTURE_1.createSession();
+		Speaker speaker = SpeakerFixture.SPEAKER_FIXTURE_1.createSpeaker();
+		Tag tag = TagFixture.TAG_FIXTURE_1.createTag();
+
+		setField(session, "sessionId", 1L);
+		setField(speaker, "session", session);
+		setField(tag, "session", session);
+
+		when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
+		when(sessionRepository.findById(1L)).thenReturn(Optional.of(session));
+		when(sessionRepository.findSessionDetailWithSpeakerAndTag(1L, 1L))
+			.thenReturn(new Object[] {session, speaker, tag, 123L, 5L});
+
+		// when
+		var result = sessionService.getSessionDetail(1L);
+
+		// then
+		assertThat(result.getTitle()).isEqualTo(session.getTitle());
+		assertThat(result.getSpeaker().getName()).isEqualTo(speaker.getName());
+		assertThat(result.getTags().getField()).isEqualTo(tag.getField());
+		assertThat(result.getIsLiked()).isTrue();
+		assertThat(result.getLikesCount()).isEqualTo(5L);
 	}
 }

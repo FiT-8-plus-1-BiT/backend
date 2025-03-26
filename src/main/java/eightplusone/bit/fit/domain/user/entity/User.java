@@ -6,6 +6,7 @@ import java.util.List;
 import eightplusone.bit.fit.domain.auth.enums.Role;
 import eightplusone.bit.fit.domain.interest.entity.MyInterest;
 import eightplusone.bit.fit.domain.mysession.entity.MySession;
+import eightplusone.bit.fit.domain.user.entity.enums.YearLevel;
 import eightplusone.bit.fit.global.base.BaseTimeEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -44,8 +45,9 @@ public class User extends BaseTimeEntity {
 	@Column(name = "job", length = 20)
 	private String job;
 
+	@Enumerated(EnumType.STRING)
 	@Column(name = "years")
-	private Integer years;
+	private YearLevel years;
 
 	@Column(name = "image_name")
 	private String imageName;
@@ -64,7 +66,7 @@ public class User extends BaseTimeEntity {
 	private List<MyInterest> myInterests = new ArrayList<>();
 
 	@Builder
-	private User(String email, String name, String provider, String job, Integer years, Role role) {
+	private User(String email, String name, String provider, String job, YearLevel years, Role role) {
 		this.email = email;
 		this.name = name;
 		this.provider = provider;
@@ -82,7 +84,7 @@ public class User extends BaseTimeEntity {
 			.build();
 	}
 
-	public void updateProfileInfo(String job, Integer years) {
+	public void updateProfileInfo(String job, YearLevel years) {
 		this.job = job;
 		this.years = years;
 	}

@@ -14,7 +14,7 @@ public class UserProfileResponseDto {
 
 	@Schema(description = "직무", example = "백엔드")
 	private final String job;
-	@Schema(description = "연차", example = "1")
+	@Schema(description = "연차", example = "신입")
 	private final YearLevel years;
 	@Schema(description = "사용자의 관심 분야", example = "[\"클라우드\", \"데이터베이스\", \"자바스크립트\"]")
 	private final List<String> interests;

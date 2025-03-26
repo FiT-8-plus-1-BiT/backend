@@ -128,7 +128,7 @@ class UserServiceTest {
 		Interest interest2 = InterestFixture.INTEREST_FIXTURE_2.createInterest();
 		Interest interest3 = InterestFixture.INTEREST_FIXTURE_3.createInterest();
 
-		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("디자이너", 10,
+		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("홍길동", "디자이너", 10,
 			List.of(interest1.getName(), interest2.getName(), interest3.getName()));
 
 		List<MyInterest> myInterests = List.of(
@@ -147,6 +147,7 @@ class UserServiceTest {
 
 		//then
 		assertAll(
+			() -> assertThat(user.getName()).isEqualTo("홍길동"),
 			() -> assertThat(user.getJob()).isEqualTo("디자이너"),
 			() -> assertThat(user.getYears()).isEqualTo(10),
 			() -> assertThat(myInterests.get(0).getInterest().getName()).isEqualTo(interest1.getName()),
@@ -164,7 +165,7 @@ class UserServiceTest {
 		Interest interest2 = InterestFixture.INTEREST_FIXTURE_2.createInterest();
 		Interest interest3 = InterestFixture.INTEREST_FIXTURE_3.createInterest();
 
-		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("디자이너", 10,
+		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("홍길동", "디자이너", 10,
 			List.of(interest1.getName(), interest2.getName(), interest3.getName()));
 
 		Mockito.when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
@@ -185,6 +186,7 @@ class UserServiceTest {
 
 		//then
 		assertAll(
+			() -> assertThat(user.getName()).isEqualTo("홍길동"),
 			() -> assertThat(user.getJob()).isEqualTo("디자이너"),
 			() -> assertThat(user.getYears()).isEqualTo(10),
 			() -> assertThat(myInterests.get(0).getInterest().getName()).isEqualTo(interest1.getName()),

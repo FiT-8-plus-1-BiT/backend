@@ -65,7 +65,7 @@ public class UserService {
 	@Transactional
 	public void updateProfileInfo(String email, UserProfileUpdateRequestDto requestDto) {
 		User user = userRepository.findLoginUserByEmail(email);
-		user.updateProfileInfo(requestDto.getJob(), requestDto.getYears());
+		user.updateProfileInfo(requestDto.getName(), requestDto.getJob(), requestDto.getYears());
 
 		Interest interest1 = interestRepository.findByName(requestDto.getInterests().get(0));
 		Interest interest2 = interestRepository.findByName(requestDto.getInterests().get(1));

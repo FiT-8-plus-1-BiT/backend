@@ -17,6 +17,10 @@ import lombok.NoArgsConstructor;
 @Schema(name = "UserProfileUpdateRequestDto: 회원 개인 정보 업데이트 Dto")
 public class UserProfileUpdateRequestDto {
 
+	@NotBlank(message = "이름이 입력되지 않았습니다.")
+	@Schema(description = "사용자 이름", example = "홍길동")
+	private String name;
+
 	@NotBlank(message = "직무가 입력되지 않았습니다.")
 	@Schema(description = "직무", example = "백엔드")
 	private String job;
@@ -32,14 +36,16 @@ public class UserProfileUpdateRequestDto {
 	private List<String> interests;
 
 	@Builder
-	private UserProfileUpdateRequestDto(String job, Integer years, List<String> interests) {
+	private UserProfileUpdateRequestDto(String name, String job, Integer years, List<String> interests) {
+		this.name = name;
 		this.job = job;
 		this.years = years;
 		this.interests = interests;
 	}
 
-	public static UserProfileUpdateRequestDto of(String job, Integer years, List<String> interests) {
+	public static UserProfileUpdateRequestDto of(String name, String job, Integer years, List<String> interests) {
 		return UserProfileUpdateRequestDto.builder()
+			.name(name)
 			.job(job)
 			.years(years)
 			.interests(interests)

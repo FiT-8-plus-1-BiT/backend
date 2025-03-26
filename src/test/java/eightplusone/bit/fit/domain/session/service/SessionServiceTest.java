@@ -26,7 +26,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import eightplusone.bit.fit.domain.auth.dto.CustomUserDetails;
+import eightplusone.bit.fit.domain.interest.entity.Interest;
+import eightplusone.bit.fit.domain.interest.entity.MyInterest;
 import eightplusone.bit.fit.domain.mysession.entity.MySession;
+import eightplusone.bit.fit.domain.mysession.repository.MySessionRepository;
 import eightplusone.bit.fit.domain.session.dto.SessionDetailResponseDto;
 import eightplusone.bit.fit.domain.session.dto.SessionListResponseDto;
 import eightplusone.bit.fit.domain.session.entity.Session;
@@ -36,6 +39,7 @@ import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import eightplusone.bit.fit.domain.tag.entity.Tag;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
+import eightplusone.bit.fit.support.fixture.InterestFixture;
 import eightplusone.bit.fit.support.fixture.SessionFixture;
 import eightplusone.bit.fit.support.fixture.SpeakerFixture;
 import eightplusone.bit.fit.support.fixture.TagFixture;
@@ -51,6 +55,9 @@ class SessionServiceTest {
 
 	@Mock
 	private SessionRepository sessionRepository;
+
+	@Mock
+	private MySessionRepository mySessionRepository;
 
 	@InjectMocks
 	private SessionService sessionService;
@@ -608,5 +615,67 @@ class SessionServiceTest {
 		assertThat(result.getTags().getField()).isEqualTo(tag.getField());
 		assertThat(result.getIsLiked()).isTrue();
 		assertThat(result.getLikesCount()).isEqualTo(5L);
+	}
+
+	@Test
+	@DisplayName("추천 세션을 점수 기준으로 정렬한다.")
+	void recommendSessionsByInterests_sortedByScore() {
+		// given
+		User user = UserFixture.USER_FIXTURE_1.createUser();
+		setField(user, "id", 1L);
+
+		Interest interest = InterestFixture.INTEREST_FIXTURE_1.createInterest(); // "데이터베이스"
+		MyInterest myInterest = MyInterest.builder().user(user).interest(interest).build();
+		setField(myInterest, "id", 1L);
+		user.getMyInterests().add(myInterest);
+
+		CustomUserDetails userDetails = new CustomUserDetails(user);
+		SecurityContextHolder.getContext().setAuthentication(
+			new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())
+		);
+
+		when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
+		when(mySessionRepository.findByUserId(user.getId())).thenReturn(List.of());
+
+		// score: 5 >> field 3 + level 2
+		Session session1 = SessionFixture.SESSION_STAGE_1_FIXTURE_1.createSession();
+		setField(session1, "sessionId", 1L);
+		Tag tag1 = TagFixture.TAG_FIXTURE_1.createTag();
+		setField(tag1, "field", "백엔드");
+		setField(tag1, "level", "초급");
+		Speaker speaker1 = SpeakerFixture.SPEAKER_FIXTURE_1.createSpeaker();
+
+		// score: 4 >> field 3 + level 1
+		Session session2 = SessionFixture.SESSION_STAGE_1_FIXTURE_2.createSession();
+		setField(session2, "sessionId", 2L);
+		Tag tag2 = TagFixture.TAG_FIXTURE_2.createTag();
+		setField(tag2, "field", "백엔드");
+		setField(tag2, "level", "중급");
+		Speaker speaker2 = SpeakerFixture.SPEAKER_FIXTURE_2.createSpeaker();
+
+		// score: 0 >> 태그 / 수준 둘 다 X
+		Session session3 = SessionFixture.SESSION_STAGE_1_FIXTURE_3.createSession();
+		setField(session3, "sessionId", 3L);
+		Tag tag3 = TagFixture.TAG_FIXTURE_3.createTag();
+		setField(tag3, "field", "프론트엔드");
+		setField(tag3, "level", "고급");
+		Speaker speaker3 = SpeakerFixture.SPEAKER_FIXTURE_3.createSpeaker();
+
+		List<Object[]> sessionData = List.of(
+			new Object[] {session1, tag1, speaker1},
+			new Object[] {session2, tag2, speaker2},
+			new Object[] {session3, tag3, speaker3}
+		);
+
+		when(sessionRepository.findAllWithSpeakerAndTag()).thenReturn(sessionData);
+
+		// when
+		List<SessionListResponseDto> result = sessionService.recommendSessionsByInterests();
+
+		// then
+		assertThat(result).hasSize(3);
+		assertThat(result.get(0).getTitle()).isEqualTo(session1.getTitle());
+		assertThat(result.get(1).getTitle()).isEqualTo(session2.getTitle());
+		assertThat(result.get(2).getTitle()).isEqualTo(session3.getTitle());
 	}
 }

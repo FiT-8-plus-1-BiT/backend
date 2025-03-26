@@ -92,6 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	}
 
 	private boolean isOptionalAuthPath(String requestUri) {
-		return requestUri.startsWith("/api/v1/session");
+		return requestUri.startsWith("/api/v1/session") &&
+			!requestUri.equals("/api/v1/session/recommended");
 	}
 }

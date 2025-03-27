@@ -13,6 +13,8 @@ import eightplusone.bit.fit.domain.mysession.enums.MySessionType;
 import eightplusone.bit.fit.domain.mysession.repository.MySessionRepository;
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
+import eightplusone.bit.fit.domain.speaker.entity.Speaker;
+import eightplusone.bit.fit.domain.speaker.repository.SpeakerRepository;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.global.exception.CustomException;
@@ -27,6 +29,7 @@ public class MySessionService {
 	private final MySessionRepository mySessionRepository;
 	private final UserRepository userRepository;
 	private final SessionRepository sessionRepository;
+	private final SpeakerRepository speakerRepository;
 
 	@Transactional
 	public void registerMySession(String email, Long sessionId) {
@@ -46,11 +49,12 @@ public class MySessionService {
 			.map(mySession -> mySession.getSession().getSessionId())
 			.toList();
 
-		// 전체세션조회
-		List<Session> allSessions = sessionRepository.findAll();
+		// 전체세션 및 강연자 조회
+		List<Speaker> allSpeakersWithSession = speakerRepository.findAllWithSession();
 
-		return allSessions.stream()
-			.map(session -> MySessionScheduleResponseDto.from(session, mySessionIds.contains(session.getSessionId())))
+		return allSpeakersWithSession.stream()
+			.map(speaker -> MySessionScheduleResponseDto.from(speaker,
+				mySessionIds.contains(speaker.getSession().getSessionId())))
 			.collect(Collectors.toList());
 	}
 

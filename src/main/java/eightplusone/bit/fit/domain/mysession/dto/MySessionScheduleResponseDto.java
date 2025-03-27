@@ -2,7 +2,7 @@ package eightplusone.bit.fit.domain.mysession.dto;
 
 import java.time.format.DateTimeFormatter;
 
-import eightplusone.bit.fit.domain.session.entity.Session;
+import eightplusone.bit.fit.domain.speaker.entity.Speaker;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,10 +28,15 @@ public class MySessionScheduleResponseDto {
 	private final Integer audioChannel;
 	@Schema(description = "담은 스케줄인지 여부", example = "true")
 	private final Boolean isMySchedule;
+	@Schema(description = "강연자 이름", example = "홍길동")
+	private final String speakerName;
+	@Schema(description = "강연자 이미지", example = "http://localhost:8080/speaker.png")
+	private final String speakerImage;
 
 	@Builder
 	private MySessionScheduleResponseDto(Long sessionId, String title, String sessionImage, String summary,
-		String startTime, String endTime, Integer standardCount, Integer audioChannel, Boolean isMySchedule) {
+		String startTime, String endTime, Integer standardCount, Integer audioChannel, Boolean isMySchedule,
+		String speakerName, String speakerImage) {
 		this.sessionId = sessionId;
 		this.title = title;
 		this.sessionImage = sessionImage;
@@ -41,20 +46,24 @@ public class MySessionScheduleResponseDto {
 		this.standardCount = standardCount;
 		this.audioChannel = audioChannel;
 		this.isMySchedule = isMySchedule;
+		this.speakerName = speakerName;
+		this.speakerImage = speakerImage;
 	}
 
-	public static MySessionScheduleResponseDto from(Session session, Boolean isMySchedule) {
+	public static MySessionScheduleResponseDto from(Speaker speaker, Boolean isMySchedule) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMddHHmm");
 		return MySessionScheduleResponseDto.builder()
-			.sessionId(session.getSessionId())
-			.title(session.getTitle())
-			.sessionImage(session.getSessionImage())
-			.summary(session.getSummary())
-			.startTime(session.getStartTime().format(formatter))
-			.endTime(session.getEndTime().format(formatter))
-			.standardCount(session.getStandardCount())
-			.audioChannel(session.getAudioChannel())
+			.sessionId(speaker.getSession().getSessionId())
+			.title(speaker.getSession().getTitle())
+			.sessionImage(speaker.getSession().getSessionImage())
+			.summary(speaker.getSession().getSummary())
+			.startTime(speaker.getSession().getStartTime().format(formatter))
+			.endTime(speaker.getSession().getEndTime().format(formatter))
+			.standardCount(speaker.getSession().getStandardCount())
+			.audioChannel(speaker.getSession().getAudioChannel())
 			.isMySchedule(isMySchedule)
+			.speakerName(speaker.getName())
+			.speakerImage(speaker.getImage())
 			.build();
 	}
 }

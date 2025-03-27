@@ -27,7 +27,6 @@ import eightplusone.bit.fit.domain.speaker.entity.Speaker;
 import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import eightplusone.bit.fit.domain.tag.entity.Tag;
 import eightplusone.bit.fit.domain.tag.entity.enums.CareerLevel;
-import eightplusone.bit.fit.domain.tag.repository.TagRepository;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.global.exception.CustomException;
@@ -46,7 +45,6 @@ public class SessionService {
 	private final MySessionRepository mySessionRepository;
 	private final String SESSION_CONGESTION_KEY = "session_congestion";
 	private final String SESSION_USER_KEY = "session_user";
-	private final TagRepository tagRepository;
 
 	// 체크인 시 레디스에 저장
 	public void checkIn(String email) {
@@ -195,27 +193,35 @@ public class SessionService {
 		);
 	}
 
+	private Set<Long> getExcludedSessionIds(Long userId) {
+		return mySessionRepository.findByUserId(userId).stream()
+			.map(mySession -> mySession.getSession().getSessionId())
+			.collect(Collectors.toSet());
+	}
+
+	private List<String> getInterestNames(User user) {
+		return user.getMyInterests().stream()
+			.map(myInterest -> myInterest.getInterest().getName())
+			.toList();
+	}
+
+	private int calculateScore(Tag tag, List<String> tagFields, String userLevel) {
+		int score = 0;
+		if (tagFields.contains(tag.getField()))
+			score += 3;
+		score += CareerLevel.calculateScore(userLevel, tag.getLevel());
+		return score;
+	}
+
 	public List<SessionListResponseDto> recommendSessionsByInterests() {
 		User user = userRepository.findLoginUserByEmail(
 			SecurityContextHolder.getContext().getAuthentication().getName());
-
 		Long userId = user.getId();
 
-		// 담기나 좋아요한 세션 제외
-		Set<Long> excludedSessionIds = mySessionRepository.findByUserId(userId).stream()
-			.map(mySession -> mySession.getSession().getSessionId())
-			.collect(Collectors.toSet());
-
-		// 연차 > 레벨
+		Set<Long> excludedSessionIds = getExcludedSessionIds(userId);
 		String level = CareerLevel.mapToTagLevel(user.getYears().name());
 
-		// 관심사
-		List<String> interests = user.getMyInterests().stream()
-			.map(myInterest -> myInterest.getInterest().getName())
-			.toList();
-
-		List<String> tagFields = InterestMapper.mapToTagFields(interests);
-
+		List<String> tagFields = InterestMapper.mapToTagFields(getInterestNames(user));
 		List<Object[]> allSessions = sessionRepository.findAllWithSpeakerAndTag();
 
 		List<ScoredSession> scoredList = allSessions.stream()
@@ -225,13 +231,7 @@ public class SessionService {
 				Tag tag = (Tag)data[1];
 				Speaker speaker = (Speaker)data[2];
 
-				int score = 0;
-
-				if (tagFields.contains(tag.getField()))
-					score += 3;
-
-				score += CareerLevel.calculateScore(level, tag.getLevel());
-
+				int score = calculateScore(tag, tagFields, level);
 				return new ScoredSession(score, session, tag, speaker);
 			})
 			.sorted()
@@ -243,7 +243,6 @@ public class SessionService {
 				SpeakerResponseDto.from(scored.getSpeaker()),
 				TagDto.from(scored.getTag()),
 				false
-			))
-			.toList();
+			)).toList();
 	}
 }

@@ -34,7 +34,7 @@ public class ImageService {
 
 	public S3ImageDto uploadToS3(MultipartFile multipartFile) {
 		try (InputStream inputStream = multipartFile.getInputStream()) {
-			validateImageContentType(multipartFile.getContentType());
+			validateImage(multipartFile);
 
 			String imageName = generateUniqueImageName(multipartFile.getOriginalFilename());
 			ObjectMetadata objectMetadata = ObjectMetadata.builder()
@@ -59,8 +59,13 @@ public class ImageService {
 		s3Operations.deleteObject(bucket, imageName);
 	}
 
-	public void validateImageContentType(String contentType) {
+	private void validateImage(MultipartFile multipartFile) {
+		String contentType = multipartFile.getContentType();
+		String name = multipartFile.getOriginalFilename();
 		if (contentType == null || !contentType.startsWith("image/")) {
+			throw new CustomException(ErrorCode.INVALID_REQUEST);
+		}
+		if (name == null || !name.matches(".*\\.(jpg|jpeg|png|webp)$")) {
 			throw new CustomException(ErrorCode.INVALID_REQUEST);
 		}
 	}

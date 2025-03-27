@@ -66,7 +66,7 @@ public class SessionController {
 	@Operation(summary = "추천 세션 조회", description = "**성공 응답 데이터:** 추천 세션 조회")
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", description = "추천 세션 조회 성공"),
-		@ApiResponse(responseCode = "404", description = "유효하지 않은 토큰 입니다."),
+		@ApiResponse(responseCode = "401", description = "유효하지 않은 토큰 입니다."),
 	})
 	@GetMapping("/recommended")
 	public ResponseEntity<ResponseDto<List<SessionListResponseDto>>> recommendedSessions() {

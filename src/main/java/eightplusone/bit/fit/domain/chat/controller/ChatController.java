@@ -38,6 +38,15 @@ public class ChatController {
 		this.userRepository = userRepository;
 	}
 
+	@Operation(summary = "채팅방 생성", description = "채팅 세션이 없으면 새로 생성하고, 있으면 그대로 사용합니다.")
+	@PostMapping("/session/{sessionId}")
+	public ResponseEntity<String> createChatSession(
+		@Parameter(description = "채팅 세션 ID", example = "1234") @PathVariable Long sessionId
+	) {
+		chatService.createChatSession(sessionId);
+		return ResponseEntity.ok("채팅방 생성 완료 또는 이미 존재: " + sessionId);
+	}
+
 	@Operation(summary = "메시지 전송", description = "특정 채팅 세션에 메시지를 전송합니다.")
 	@MessageMapping("/chat/{sessionId}")
 	public void sendMessage(

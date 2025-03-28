@@ -38,6 +38,16 @@ public class ChatService {
 		this.userRepository = userRepository;
 	}
 
+	public void createChatSession(Long sessionId) {
+		if (chatRepository.existsBySessionId(String.valueOf(sessionId))) {
+			log.info("이미 존재하는 채팅방: {}", sessionId);
+			return;
+		}
+
+		chatRepository.createChatSession(String.valueOf(sessionId));
+		log.info("새 채팅방 생성됨: {}", sessionId);
+	}
+
 	public void sendMessageWithEmail(ChatMessageDto dto, String email, Long sessionId) throws JsonProcessingException {
 		if (dto.getMessage() == null || dto.getMessage().trim().isEmpty()) {
 			throw new CustomException(ErrorCode.INVALID_MESSAGE_FORMAT);

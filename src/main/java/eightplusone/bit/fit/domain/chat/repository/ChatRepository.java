@@ -24,6 +24,10 @@ public class ChatRepository {
 		this.sessionRepository = sessionRepository;
 	}
 
+	public void createChatSession(String sessionId) {
+		redisTemplate.opsForValue().set("chat-" + sessionId, "active");
+	}
+
 	// 채팅 메시지 저장
 	public void saveMessage(ChatMessage message) {
 		String chatKey = CHAT_LIST_KEY + message.getSessionId();

@@ -27,6 +27,7 @@ public class ChatService {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final UserRedisRepository userRedisRepository;
 	private final ChatLikeRepository chatLikeRepository;
+	private final UserRepository userRepository;
 
 	public ChatService(ChatRepository chatRepository, RedisTemplate<String, Object> redisTemplate,
 		UserRedisRepository userRedisRepository, UserRepository userRepository, ChatLikeRepository chatLikeRepository) {
@@ -34,10 +35,10 @@ public class ChatService {
 		this.redisTemplate = redisTemplate;
 		this.userRedisRepository = userRedisRepository;
 		this.chatLikeRepository = chatLikeRepository;
+		this.userRepository = userRepository;
 	}
 
-	// 메시지 전송 (Redis Pub/Sub 사용)
-	public void sendMessage(ChatMessageDto dto, String userId, Long sessionId) throws JsonProcessingException {
+	public void sendMessageWithEmail(ChatMessageDto dto, String email, Long sessionId) throws JsonProcessingException {
 		if (dto.getMessage() == null || dto.getMessage().trim().isEmpty()) {
 			throw new CustomException(ErrorCode.INVALID_MESSAGE_FORMAT);
 		}
@@ -50,7 +51,15 @@ public class ChatService {
 			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
 		}
 
-		ObjectMapper objectMapper = new ObjectMapper();
+		var user = userRepository.findByEmail(email)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		String userId = user.getId().toString();
+		String name = user.getName();
+
+		// Redis에 사용자 이름 캐싱
+		userRedisRepository.saveUserName(userId, name);
+
 		ChatMessage message = ChatMessage.builder()
 			.sessionId(sessionId)
 			.userId(userId)
@@ -60,17 +69,17 @@ public class ChatService {
 
 		chatRepository.saveMessage(message);
 
-		// 메시지 카테고리가 QUESTION인 경우 ZSet에 등록
+		// 질문 메시지라면 ZSet에 추가
 		if (message.getCategory() == ChatCategory.QUESTION) {
 			String zsetKey = "questions:session:" + sessionId;
 			redisTemplate.opsForZSet().add(zsetKey, message.getMessageId(), 0); // 초기 좋아요 수 0
 		}
 
+		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonMessage = objectMapper.writeValueAsString(message);
 		String redisKey = "chat-" + sessionId;
 
 		log.info("Redis 발행 메세지 : {} -> {}", redisKey, jsonMessage);
-
 		redisTemplate.convertAndSend(redisKey, dto);
 	}
 
@@ -122,6 +131,22 @@ public class ChatService {
 			throw new CustomException(ErrorCode.CANNOT_UNLIKE);
 		}
 		chatLikeRepository.unlikeMessage(likeKey, userId, sessionId, messageId);
+	}
+
+	public void likeMessageWithEmail(String email, Long sessionId, String messageId) {
+		var user = userRepository.findByEmail(email)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		String userId = user.getId().toString();
+		likeMessage(userId, sessionId, messageId);
+	}
+
+	public void unlikeMessageWithEmail(String email, Long sessionId, String messageId) {
+		var user = userRepository.findByEmail(email)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		String userId = user.getId().toString();
+		unlikeMessage(userId, sessionId, messageId);
 	}
 
 	// 좋아요 개수 조회
@@ -198,51 +223,6 @@ public class ChatService {
 			})
 			.collect(Collectors.toList());
 	}
-
-	// public Page<ChatMessageDto> getAllQuestionMessages(Long sessionId, Pageable pageable) {
-	// 	if (!chatRepository.existsBySessionId(String.valueOf(sessionId))) {
-	// 		throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
-	// 	}
-	//
-	// 	List<Object> rawMessages = chatRepository.getRecentMessages(String.valueOf(sessionId));
-	//
-	// 	List<ChatMessage> messages = rawMessages.stream()
-	// 		.map(obj -> {
-	// 			if (obj instanceof ChatMessageDto dto) {
-	// 				return new ChatMessage(dto.getMessageId(), sessionId, dto.getUserId(), dto.getCategory(),
-	// 					dto.getMessage(), dto.getTimestamp());
-	// 			} else if (obj instanceof ChatMessage msg) {
-	// 				return msg;
-	// 			}
-	// 			return null;
-	// 		})
-	// 		.filter(Objects::nonNull)
-	// 		.filter(msg -> msg.getCategory() == ChatCategory.QUESTION)
-	// 		.sorted((m1, m2) -> {
-	// 			int likeCount1 = getLikeCount(sessionId, m1.getMessageId());
-	// 			int likeCount2 = getLikeCount(sessionId, m2.getMessageId());
-	// 			return Integer.compare(likeCount2, likeCount1); // 좋아요 내림차순 정렬
-	// 		})
-	// 		.collect(Collectors.toList());
-	//
-	// 	int start = (int)pageable.getOffset();
-	// 	int end = Math.min(start + pageable.getPageSize(), messages.size());
-	//
-	// 	List<ChatMessageDto> pageContent = messages.subList(start, end).stream()
-	// 		.map(msg -> new ChatMessageDto(
-	// 			msg.getMessageId(),
-	// 			msg.getCategory(),
-	// 			msg.getMessage(),
-	// 			userRedisRepository.getUserName(msg.getUserId()),
-	// 			msg.getUserId(),
-	// 			msg.getSessionId(),
-	// 			msg.getTimestamp(),
-	// 			getLikeCount(sessionId, msg.getMessageId())
-	// 		))
-	// 		.collect(Collectors.toList());
-	//
-	// 	return new PageImpl<>(pageContent, pageable, messages.size());
-	// }
 
 	public List<ChatMessageDto> getZSetSortedQuestions(Long sessionId, int page, int size) {
 		String zsetKey = "questions:session:" + sessionId;

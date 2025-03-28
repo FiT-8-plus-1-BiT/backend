@@ -3,11 +3,15 @@ package eightplusone.bit.fit.domain.chat.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
 import eightplusone.bit.fit.domain.chat.service.ChatService;
+import eightplusone.bit.fit.domain.user.repository.UserRepository;
+import eightplusone.bit.fit.global.exception.CustomException;
+import eightplusone.bit.fit.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.security.Principal;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -27,9 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Chat API", description = "채팅 관련 API")
 public class ChatController {
 	private final ChatService chatService;
+	private final UserRepository userRepository;
 
-	public ChatController(ChatService chatService) {
+	public ChatController(ChatService chatService, UserRepository userRepository) {
 		this.chatService = chatService;
+		this.userRepository = userRepository;
 	}
 
 	@Operation(summary = "메시지 전송", description = "특정 채팅 세션에 메시지를 전송합니다.")
@@ -37,9 +43,9 @@ public class ChatController {
 	public void sendMessage(
 		@Parameter(description = "채팅 세션 ID", example = "1234") @DestinationVariable("sessionId") String sessionId,
 		@Payload ChatMessageDto message,
-		@Parameter(description = "사용자 ID", example = "user123") @Header("User-Id") String userId
+		@Parameter(description = "사용자 ID", example = "user123") @Header("simpUser") Principal principal
 	) throws JsonProcessingException {
-		chatService.sendMessage(message, userId, Long.valueOf(sessionId));
+		chatService.sendMessageWithEmail(message, principal.getName(), Long.valueOf(sessionId));
 	}
 
 	@Operation(summary = "최근 메시지 조회", description = "특정 채팅방의 최근 메시지를 조회합니다.")
@@ -68,9 +74,9 @@ public class ChatController {
 	public void likeMessage(
 		@Parameter(description = "세션 ID", example = "1234") @PathVariable Long sessionId,
 		@Parameter(description = "메시지 ID", example = "msg123") @PathVariable String messageId,
-		@Parameter(description = "사용자 ID", example = "user123") @RequestParam String userId
+		@Parameter(description = "사용자 ID", example = "user123") Principal principal
 	) {
-		chatService.likeMessage(userId, sessionId, messageId);
+		chatService.likeMessageWithEmail(principal.getName(), sessionId, messageId);
 	}
 
 	@Operation(summary = "메시지 좋아요 취소", description = "특정 메시지의 좋아요를 취소합니다.")
@@ -78,9 +84,9 @@ public class ChatController {
 	public void unlikeMessage(
 		@Parameter(description = "세션 ID", example = "1234") @PathVariable Long sessionId,
 		@Parameter(description = "메시지 ID", example = "msg123") @PathVariable String messageId,
-		@Parameter(description = "사용자 ID", example = "user123") @RequestParam String userId
+		@Parameter(description = "사용자 ID", example = "user123") Principal principal
 	) {
-		chatService.unlikeMessage(userId, sessionId, messageId);
+		chatService.unlikeMessageWithEmail(principal.getName(), sessionId, messageId);
 	}
 
 	@Operation(summary = "질문 메시지 정렬", description = "특정 세션의 질문 메시지에서 가장 좋아요를 많이 받은 3개만 반환합니다.")
@@ -91,15 +97,17 @@ public class ChatController {
 		return chatService.getSortedQuestionMessages(Long.valueOf(sessionId));
 	}
 
-	@Operation(summary = "좋아요 존재 여부 확인", description = "사용자가 특정 세션의 특정 메시지에 좋아요를 눌렀는지 확인합니다.")
-	@GetMapping("/likes/{userId}/{sessionId}/{messageId}")
-	public ResponseEntity<Boolean> hasLiked(
-		@PathVariable String userId,
-		@PathVariable Long sessionId,
-		@PathVariable String messageId
-	) {
-		boolean hasLiked = chatService.hasLiked(userId, sessionId, messageId);
-		return ResponseEntity.ok(hasLiked);
+	@GetMapping("/likes/{sessionId}/{messageId}")
+	public ResponseEntity<Boolean> hasLiked(@PathVariable Long sessionId,
+		@PathVariable String messageId,
+		Principal principal) {
+		String email = principal.getName();
+		Long userId = userRepository.findByEmail(email)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))
+			.getId();
+
+		boolean result = chatService.hasLiked(userId.toString(), sessionId, messageId);
+		return ResponseEntity.ok(result);
 	}
 
 	@Operation(summary = "ZSet 기반 좋아요 정렬 질문 페이징", description = "ZSet으로 좋아요 순으로 정렬된 질문을 페이징하여 반환합니다.")

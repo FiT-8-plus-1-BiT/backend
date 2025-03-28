@@ -15,10 +15,13 @@ public class SpeakerResponseDto {
 	@Schema(description = "이름", example = "홍길동")
 	private String name;
 
+	private String description;
+
 	public static SpeakerResponseDto from(Speaker speaker) {
 		return SpeakerResponseDto.builder()
 			.image(speaker.getImage())
 			.name(speaker.getName())
+			.description(speaker.getDescription())
 			.build();
 	}
 }

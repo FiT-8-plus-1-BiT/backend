@@ -50,7 +50,11 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
 		response.addHeader(HttpHeaders.SET_COOKIE,
 			CookieUtil.createCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken,
 				tokenProvider.getRefreshTokenExpirationSeconds()).toString());
-		response.sendRedirect(allowedOrigins + "/main");
+		if (request.getRequestURI().contains("naver")) {
+			response.sendRedirect(allowedOrigins + "/main");
+		} else {
+			response.sendRedirect("http://localhost:5173/main");
+		}
 		log.info("{}-{}: login ({})", email, role, new Date());
 	}
 }

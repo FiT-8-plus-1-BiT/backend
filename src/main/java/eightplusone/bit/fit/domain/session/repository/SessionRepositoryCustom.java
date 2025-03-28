@@ -15,4 +15,6 @@ public interface SessionRepositoryCustom {
 	List<Object[]> findLiveSessionsWithSpeakerAndTag(@Nullable Long userId);
 
 	Object[] findSessionDetailWithSpeakerAndTag(Long sessionId, @Nullable Long userId);
+
+	List<Object[]> findAllWithSpeakerAndTag();
 }

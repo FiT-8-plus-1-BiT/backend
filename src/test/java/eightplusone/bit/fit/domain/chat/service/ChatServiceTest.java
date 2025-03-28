@@ -5,16 +5,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import eightplusone.bit.fit.domain.auth.enums.Role;
 import eightplusone.bit.fit.domain.chat.dto.ChatMessageDto;
 import eightplusone.bit.fit.domain.chat.entity.ChatMessage;
 import eightplusone.bit.fit.domain.chat.enums.ChatCategory;
 import eightplusone.bit.fit.domain.chat.repository.ChatLikeRepository;
 import eightplusone.bit.fit.domain.chat.repository.ChatRepository;
+import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRedisRepository;
+import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.global.exception.CustomException;
 import eightplusone.bit.fit.global.exception.ErrorCode;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,9 +30,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ChatServiceTest {
+
+	@Mock
+	private UserRepository userRepository;
 
 	@Mock
 	private ChatRepository chatRepository;
@@ -77,11 +85,19 @@ class ChatServiceTest {
 	// 채팅 메시지를 성공적으로 저장하고 레디스에 발행되는지 확인
 	@Test
 	void sendMessage_success() throws JsonProcessingException {
+		// given
+		String email = "test@example.com";
+		User mockUser = User.of(email, "테스터", "kakao", Role.USER);
+		ReflectionTestUtils.setField(mockUser, "id", 1L); // id 필드는 private이므로 강제로 세팅
+
+		when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
 		when(chatRepository.existsBySessionId(String.valueOf(sessionId))).thenReturn(true);
 		doNothing().when(chatRepository).saveMessage(any(ChatMessage.class));
 
-		chatService.sendMessage(chatMessageDto, userId, sessionId);
+		// when
+		chatService.sendMessageWithEmail(chatMessageDto, email, sessionId);
 
+		// then
 		verify(chatRepository, times(1)).saveMessage(any(ChatMessage.class));
 		verify(redisTemplate, times(1)).convertAndSend(eq("chat-" + sessionId), any(ChatMessageDto.class));
 	}
@@ -92,7 +108,7 @@ class ChatServiceTest {
 		when(chatRepository.existsBySessionId(String.valueOf(sessionId))).thenReturn(false);
 
 		CustomException exception = assertThrows(CustomException.class, () ->
-			chatService.sendMessage(chatMessageDto, userId, sessionId));
+			chatService.sendMessageWithEmail(chatMessageDto, userId, sessionId));
 
 		assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CHAT_SESSION_NOT_FOUND);
 	}

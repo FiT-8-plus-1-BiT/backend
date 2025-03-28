@@ -2,6 +2,7 @@ package eightplusone.bit.fit.domain.session.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -13,7 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import eightplusone.bit.fit.domain.interest.mapper.InterestMapper;
 import eightplusone.bit.fit.domain.mysession.repository.MySessionRepository;
+import eightplusone.bit.fit.domain.session.dto.ScoredSession;
 import eightplusone.bit.fit.domain.session.dto.SessionDetailResponseDto;
 import eightplusone.bit.fit.domain.session.dto.SessionListResponseDto;
 import eightplusone.bit.fit.domain.session.entity.Session;
@@ -23,6 +26,8 @@ import eightplusone.bit.fit.domain.speaker.dto.SpeakerResponseDto;
 import eightplusone.bit.fit.domain.speaker.entity.Speaker;
 import eightplusone.bit.fit.domain.tag.dto.TagDto;
 import eightplusone.bit.fit.domain.tag.entity.Tag;
+import eightplusone.bit.fit.domain.tag.entity.enums.CareerLevel;
+import eightplusone.bit.fit.domain.tag.repository.TagRepository;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.global.exception.CustomException;
@@ -41,6 +46,7 @@ public class SessionService {
 	private final MySessionRepository mySessionRepository;
 	private final String SESSION_CONGESTION_KEY = "session_congestion";
 	private final String SESSION_USER_KEY = "session_user";
+	private final TagRepository tagRepository;
 
 	// 체크인 시 레디스에 저장
 	public void checkIn(String email) {
@@ -187,5 +193,57 @@ public class SessionService {
 			result[3] != null,
 			(Long)result[4]
 		);
+	}
+
+	public List<SessionListResponseDto> recommendSessionsByInterests() {
+		User user = userRepository.findLoginUserByEmail(
+			SecurityContextHolder.getContext().getAuthentication().getName());
+
+		Long userId = user.getId();
+
+		// 담기나 좋아요한 세션 제외
+		Set<Long> excludedSessionIds = mySessionRepository.findByUserId(userId).stream()
+			.map(mySession -> mySession.getSession().getSessionId())
+			.collect(Collectors.toSet());
+
+		// 연차 > 레벨
+		String level = CareerLevel.mapToTagLevel(user.getYears().name());
+
+		// 관심사
+		List<String> interests = user.getMyInterests().stream()
+			.map(myInterest -> myInterest.getInterest().getName())
+			.toList();
+
+		List<String> tagFields = InterestMapper.mapToTagFields(interests);
+
+		List<Object[]> allSessions = sessionRepository.findAllWithSpeakerAndTag();
+
+		List<ScoredSession> scoredList = allSessions.stream()
+			.filter(data -> !excludedSessionIds.contains(((Session)data[0]).getSessionId()))
+			.map(data -> {
+				Session session = (Session)data[0];
+				Tag tag = (Tag)data[1];
+				Speaker speaker = (Speaker)data[2];
+
+				int score = 0;
+
+				if (tagFields.contains(tag.getField()))
+					score += 3;
+
+				score += CareerLevel.calculateScore(level, tag.getLevel());
+
+				return new ScoredSession(score, session, tag, speaker);
+			})
+			.sorted()
+			.toList();
+
+		return scoredList.stream()
+			.map(scored -> SessionListResponseDto.from(
+				scored.getSession(),
+				SpeakerResponseDto.from(scored.getSpeaker()),
+				TagDto.from(scored.getTag()),
+				false
+			))
+			.toList();
 	}
 }

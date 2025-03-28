@@ -20,12 +20,13 @@ import eightplusone.bit.fit.domain.auth.service.OAuth2UnlinkService;
 import eightplusone.bit.fit.domain.auth.service.RedisTokenService;
 import eightplusone.bit.fit.domain.interest.entity.Interest;
 import eightplusone.bit.fit.domain.interest.entity.MyInterest;
-import eightplusone.bit.fit.domain.interest.repostiroy.InterestRepository;
-import eightplusone.bit.fit.domain.interest.repostiroy.MyInterestRepository;
+import eightplusone.bit.fit.domain.interest.repository.InterestRepository;
+import eightplusone.bit.fit.domain.interest.repository.MyInterestRepository;
 import eightplusone.bit.fit.domain.user.dto.UserAccountResponseDto;
 import eightplusone.bit.fit.domain.user.dto.UserProfileResponseDto;
 import eightplusone.bit.fit.domain.user.dto.UserProfileUpdateRequestDto;
 import eightplusone.bit.fit.domain.user.entity.User;
+import eightplusone.bit.fit.domain.user.entity.enums.YearLevel;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.support.fixture.InterestFixture;
 import eightplusone.bit.fit.support.fixture.UserFixture;
@@ -128,7 +129,8 @@ class UserServiceTest {
 		Interest interest2 = InterestFixture.INTEREST_FIXTURE_2.createInterest();
 		Interest interest3 = InterestFixture.INTEREST_FIXTURE_3.createInterest();
 
-		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("홍길동", "디자이너", 10,
+		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("홍길동", "디자이너",
+			YearLevel.SENIOR,
 			List.of(interest1.getName(), interest2.getName(), interest3.getName()));
 
 		List<MyInterest> myInterests = List.of(
@@ -149,7 +151,7 @@ class UserServiceTest {
 		assertAll(
 			() -> assertThat(user.getName()).isEqualTo("홍길동"),
 			() -> assertThat(user.getJob()).isEqualTo("디자이너"),
-			() -> assertThat(user.getYears()).isEqualTo(10),
+			() -> assertThat(user.getYears()).isEqualTo(YearLevel.SENIOR),
 			() -> assertThat(myInterests.get(0).getInterest().getName()).isEqualTo(interest1.getName()),
 			() -> assertThat(myInterests.get(1).getInterest().getName()).isEqualTo(interest2.getName()),
 			() -> assertThat(myInterests.get(2).getInterest().getName()).isEqualTo(interest3.getName())
@@ -165,7 +167,8 @@ class UserServiceTest {
 		Interest interest2 = InterestFixture.INTEREST_FIXTURE_2.createInterest();
 		Interest interest3 = InterestFixture.INTEREST_FIXTURE_3.createInterest();
 
-		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("홍길동", "디자이너", 10,
+		UserProfileUpdateRequestDto userProfileUpdateRequestDto = UserProfileUpdateRequestDto.of("홍길동", "디자이너",
+			YearLevel.SENIOR,
 			List.of(interest1.getName(), interest2.getName(), interest3.getName()));
 
 		Mockito.when(userRepository.findLoginUserByEmail(user.getEmail())).thenReturn(user);
@@ -188,7 +191,7 @@ class UserServiceTest {
 		assertAll(
 			() -> assertThat(user.getName()).isEqualTo("홍길동"),
 			() -> assertThat(user.getJob()).isEqualTo("디자이너"),
-			() -> assertThat(user.getYears()).isEqualTo(10),
+			() -> assertThat(user.getYears()).isEqualTo(YearLevel.SENIOR),
 			() -> assertThat(myInterests.get(0).getInterest().getName()).isEqualTo(interest1.getName()),
 			() -> assertThat(myInterests.get(1).getInterest().getName()).isEqualTo(interest2.getName()),
 			() -> assertThat(myInterests.get(2).getInterest().getName()).isEqualTo(interest3.getName())

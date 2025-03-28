@@ -14,7 +14,8 @@ public enum ApiEndpoint {
 		"/call",
 		"/ws",
 		"/ws/**",
-		"/api/v1/session/**"
+		"/api/v1/session/**",
+		"/api/v1/speaker"
 	}),
 
 	PUBLIC_POST(HttpMethod.POST, new String[] {

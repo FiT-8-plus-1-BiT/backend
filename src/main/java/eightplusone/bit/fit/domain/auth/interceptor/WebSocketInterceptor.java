@@ -8,7 +8,6 @@ import eightplusone.bit.fit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -49,11 +48,14 @@ public class WebSocketInterceptor implements ChannelInterceptor {
 				return message;
 			}
 
-			String authHeader = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
+			String authHeader = accessor.getFirstNativeHeader("Authorization");
+			if (authHeader == null) {
+				authHeader = accessor.getFirstNativeHeader("authorization"); //소문자도 확인
+			}
 
 			// 토큰이 없거나 형식이 잘못된 경우 예외 처리
 			if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-				log.warn("❌ WebSocket 토큰 누락 또는 형식 오류");
+				log.warn("❌ WebSocket 토큰 누락 또는 형식 오류 - 받은 값: {}", authHeader);
 				throw new CustomException(ErrorCode.INVALID_AUTH_TOKEN);
 			}
 

@@ -20,9 +20,12 @@ import eightplusone.bit.fit.domain.mysession.enums.MySessionType;
 import eightplusone.bit.fit.domain.mysession.repository.MySessionRepository;
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
+import eightplusone.bit.fit.domain.speaker.entity.Speaker;
+import eightplusone.bit.fit.domain.speaker.repository.SpeakerRepository;
 import eightplusone.bit.fit.domain.user.entity.User;
 import eightplusone.bit.fit.domain.user.repository.UserRepository;
 import eightplusone.bit.fit.support.fixture.SessionFixture;
+import eightplusone.bit.fit.support.fixture.SpeakerFixture;
 import eightplusone.bit.fit.support.fixture.UserFixture;
 
 @SpringBootTest
@@ -37,10 +40,13 @@ class MySessionServiceTest {
 	SessionRepository sessionRepository;
 	@Autowired
 	MySessionRepository mySessionRepository;
+	@Autowired
+	SpeakerRepository speakerRepository;
 
 	@BeforeEach
 	void cleanUp() {
 		mySessionRepository.deleteAllInBatch();
+		speakerRepository.deleteAllInBatch();
 		sessionRepository.deleteAllInBatch();
 		userRepository.deleteAllInBatch();
 	}
@@ -79,13 +85,23 @@ class MySessionServiceTest {
 		//given
 		User user = userRepository.save(UserFixture.USER_FIXTURE_1.createUser());
 
-		Session session1 = sessionRepository.save(SessionFixture.SESSION_STAGE_1_FIXTURE_1.createSession());
-		Session session2 = sessionRepository.save(SessionFixture.SESSION_STAGE_2_FIXTURE_2.createSession());
-		Session session3 = sessionRepository.save(SessionFixture.SESSION_STAGE_3_FIXTURE_3.createSession());
-		Session session4 = sessionRepository.save(SessionFixture.SESSION_STAGE_4_FIXTURE_1.createSession());
+		Speaker speakerFixture1 = SpeakerFixture.SPEAKER_FIXTURE_1.createSpeaker();
+		Speaker speakerFixture2 = SpeakerFixture.SPEAKER_FIXTURE_2.createSpeaker();
+		Speaker speakerFixture3 = SpeakerFixture.SPEAKER_FIXTURE_3.createSpeaker();
+		Speaker speakerFixture4 = SpeakerFixture.SPEAKER_FIXTURE_4.createSpeaker();
 
-		mySessionRepository.save(MySession.register(user, session1));
-		mySessionRepository.save(MySession.register(user, session2));
+		sessionRepository.save(speakerFixture1.getSession());
+		sessionRepository.save(speakerFixture2.getSession());
+		sessionRepository.save(speakerFixture3.getSession());
+		sessionRepository.save(speakerFixture4.getSession());
+
+		Speaker speaker1 = speakerRepository.save(speakerFixture1);
+		Speaker speaker2 = speakerRepository.save(speakerFixture2);
+		Speaker speaker3 = speakerRepository.save(speakerFixture3);
+		Speaker speaker4 = speakerRepository.save(speakerFixture4);
+
+		mySessionRepository.save(MySession.register(user, speaker1.getSession()));
+		mySessionRepository.save(MySession.register(user, speaker2.getSession()));
 
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMddHHmm");
 
@@ -95,52 +111,56 @@ class MySessionServiceTest {
 
 		//then
 		assertAll(
-			() -> assertThat(responseDtos.get(0).getSessionId()).isEqualTo(session1.getSessionId()),
-			() -> assertThat(responseDtos.get(0).getTitle()).isEqualTo(session1.getTitle()),
-			() -> assertThat(responseDtos.get(0).getSummary()).isEqualTo(session1.getSummary()),
-			() -> assertThat(responseDtos.get(0).getSessionImage()).isEqualTo(session1.getSessionImage()),
-			() -> assertThat(responseDtos.get(0).getStandardCount()).isEqualTo(session1.getStandardCount()),
-			() -> assertThat(responseDtos.get(0).getAudioChannel()).isEqualTo(session1.getAudioChannel()),
+			() -> assertThat(responseDtos.get(0).getSessionId()).isEqualTo(speaker1.getSession().getSessionId()),
+			() -> assertThat(responseDtos.get(0).getTitle()).isEqualTo(speaker1.getSession().getTitle()),
+			() -> assertThat(responseDtos.get(0).getSummary()).isEqualTo(speaker1.getSession().getSummary()),
+			() -> assertThat(responseDtos.get(0).getSessionImage()).isEqualTo(speaker1.getSession().getSessionImage()),
+			() -> assertThat(responseDtos.get(0).getStandardCount()).isEqualTo(
+				speaker1.getSession().getStandardCount()),
+			() -> assertThat(responseDtos.get(0).getAudioChannel()).isEqualTo(speaker1.getSession().getAudioChannel()),
 			() -> assertThat(responseDtos.get(0).getStartTime()).isEqualTo(
-				session1.getStartTime().format(formatter)),
+				speaker1.getSession().getStartTime().format(formatter)),
 			() -> assertThat(responseDtos.get(0).getEndTime()).isEqualTo(
-				session1.getEndTime().format(formatter)),
+				speaker1.getSession().getEndTime().format(formatter)),
 			() -> assertThat(responseDtos.get(0).getIsMySchedule()).isTrue(),
 
-			() -> assertThat(responseDtos.get(1).getSessionId()).isEqualTo(session2.getSessionId()),
-			() -> assertThat(responseDtos.get(1).getTitle()).isEqualTo(session2.getTitle()),
-			() -> assertThat(responseDtos.get(1).getSummary()).isEqualTo(session2.getSummary()),
-			() -> assertThat(responseDtos.get(1).getSessionImage()).isEqualTo(session2.getSessionImage()),
-			() -> assertThat(responseDtos.get(1).getStandardCount()).isEqualTo(session2.getStandardCount()),
-			() -> assertThat(responseDtos.get(1).getAudioChannel()).isEqualTo(session2.getAudioChannel()),
+			() -> assertThat(responseDtos.get(1).getSessionId()).isEqualTo(speaker2.getSession().getSessionId()),
+			() -> assertThat(responseDtos.get(1).getTitle()).isEqualTo(speaker2.getSession().getTitle()),
+			() -> assertThat(responseDtos.get(1).getSummary()).isEqualTo(speaker2.getSession().getSummary()),
+			() -> assertThat(responseDtos.get(1).getSessionImage()).isEqualTo(speaker2.getSession().getSessionImage()),
+			() -> assertThat(responseDtos.get(1).getStandardCount()).isEqualTo(
+				speaker2.getSession().getStandardCount()),
+			() -> assertThat(responseDtos.get(1).getAudioChannel()).isEqualTo(speaker2.getSession().getAudioChannel()),
 			() -> assertThat(responseDtos.get(1).getStartTime()).isEqualTo(
-				session2.getStartTime().format(formatter)),
+				speaker2.getSession().getStartTime().format(formatter)),
 			() -> assertThat(responseDtos.get(1).getEndTime()).isEqualTo(
-				session2.getEndTime().format(formatter)),
+				speaker2.getSession().getEndTime().format(formatter)),
 			() -> assertThat(responseDtos.get(1).getIsMySchedule()).isTrue(),
 
-			() -> assertThat(responseDtos.get(2).getSessionId()).isEqualTo(session3.getSessionId()),
-			() -> assertThat(responseDtos.get(2).getTitle()).isEqualTo(session3.getTitle()),
-			() -> assertThat(responseDtos.get(2).getSummary()).isEqualTo(session3.getSummary()),
-			() -> assertThat(responseDtos.get(2).getSessionImage()).isEqualTo(session3.getSessionImage()),
-			() -> assertThat(responseDtos.get(2).getStandardCount()).isEqualTo(session3.getStandardCount()),
-			() -> assertThat(responseDtos.get(2).getAudioChannel()).isEqualTo(session3.getAudioChannel()),
+			() -> assertThat(responseDtos.get(2).getSessionId()).isEqualTo(speaker3.getSession().getSessionId()),
+			() -> assertThat(responseDtos.get(2).getTitle()).isEqualTo(speaker3.getSession().getTitle()),
+			() -> assertThat(responseDtos.get(2).getSummary()).isEqualTo(speaker3.getSession().getSummary()),
+			() -> assertThat(responseDtos.get(2).getSessionImage()).isEqualTo(speaker3.getSession().getSessionImage()),
+			() -> assertThat(responseDtos.get(2).getStandardCount()).isEqualTo(
+				speaker3.getSession().getStandardCount()),
+			() -> assertThat(responseDtos.get(2).getAudioChannel()).isEqualTo(speaker3.getSession().getAudioChannel()),
 			() -> assertThat(responseDtos.get(2).getStartTime()).isEqualTo(
-				session3.getStartTime().format(formatter)),
+				speaker3.getSession().getStartTime().format(formatter)),
 			() -> assertThat(responseDtos.get(2).getEndTime()).isEqualTo(
-				session3.getEndTime().format(formatter)),
+				speaker3.getSession().getEndTime().format(formatter)),
 			() -> assertThat(responseDtos.get(2).getIsMySchedule()).isFalse(),
 
-			() -> assertThat(responseDtos.get(3).getSessionId()).isEqualTo(session4.getSessionId()),
-			() -> assertThat(responseDtos.get(3).getTitle()).isEqualTo(session4.getTitle()),
-			() -> assertThat(responseDtos.get(3).getSummary()).isEqualTo(session4.getSummary()),
-			() -> assertThat(responseDtos.get(3).getSessionImage()).isEqualTo(session4.getSessionImage()),
-			() -> assertThat(responseDtos.get(3).getStandardCount()).isEqualTo(session4.getStandardCount()),
-			() -> assertThat(responseDtos.get(3).getAudioChannel()).isEqualTo(session4.getAudioChannel()),
+			() -> assertThat(responseDtos.get(3).getSessionId()).isEqualTo(speaker4.getSession().getSessionId()),
+			() -> assertThat(responseDtos.get(3).getTitle()).isEqualTo(speaker4.getSession().getTitle()),
+			() -> assertThat(responseDtos.get(3).getSummary()).isEqualTo(speaker4.getSession().getSummary()),
+			() -> assertThat(responseDtos.get(3).getSessionImage()).isEqualTo(speaker4.getSession().getSessionImage()),
+			() -> assertThat(responseDtos.get(3).getStandardCount()).isEqualTo(
+				speaker4.getSession().getStandardCount()),
+			() -> assertThat(responseDtos.get(3).getAudioChannel()).isEqualTo(speaker4.getSession().getAudioChannel()),
 			() -> assertThat(responseDtos.get(3).getStartTime()).isEqualTo(
-				session4.getStartTime().format(formatter)),
+				speaker4.getSession().getStartTime().format(formatter)),
 			() -> assertThat(responseDtos.get(3).getEndTime()).isEqualTo(
-				session4.getEndTime().format(formatter)),
+				speaker4.getSession().getEndTime().format(formatter)),
 			() -> assertThat(responseDtos.get(3).getIsMySchedule()).isFalse()
 		);
 	}

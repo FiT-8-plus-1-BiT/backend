@@ -1,4 +1,4 @@
-package eightplusone.bit.fit.domain.interest.repostiroy;
+package eightplusone.bit.fit.domain.interest.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

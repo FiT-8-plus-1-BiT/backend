@@ -152,4 +152,16 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 		return new Object[] {result.get(session), result.get(speaker), result.get(tag), result.get(mySession.id),
 			result.get(likeCount)};
 	}
+
+	@Override
+	public List<Object[]> findAllWithSpeakerAndTag() {
+		List<Tuple> results = queryFactory
+			.select(session, tag, speaker)
+			.from(session)
+			.leftJoin(tag).on(tag.session.eq(session))
+			.leftJoin(speaker).on(speaker.session.eq(session))
+			.fetch();
+
+		return results.stream().map(Tuple::toArray).toList();
+	}
 }

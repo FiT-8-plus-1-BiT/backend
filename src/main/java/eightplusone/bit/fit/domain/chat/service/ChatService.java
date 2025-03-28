@@ -133,6 +133,22 @@ public class ChatService {
 		chatLikeRepository.unlikeMessage(likeKey, userId, sessionId, messageId);
 	}
 
+	public void likeMessageWithEmail(String email, Long sessionId, String messageId) {
+		var user = userRepository.findByEmail(email)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		String userId = user.getId().toString();
+		likeMessage(userId, sessionId, messageId);
+	}
+
+	public void unlikeMessageWithEmail(String email, Long sessionId, String messageId) {
+		var user = userRepository.findByEmail(email)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		String userId = user.getId().toString();
+		unlikeMessage(userId, sessionId, messageId);
+	}
+
 	// 좋아요 개수 조회
 	public int getLikeCount(Long sessionId, String messageId) {
 		String likeKey = "like:" + sessionId + ":" + messageId;

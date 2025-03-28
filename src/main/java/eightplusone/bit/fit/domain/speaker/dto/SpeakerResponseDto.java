@@ -13,10 +13,13 @@ public class SpeakerResponseDto {
 
 	private String name;
 
+	private String description;
+
 	public static SpeakerResponseDto from(Speaker speaker) {
 		return SpeakerResponseDto.builder()
 			.image(speaker.getImage())
 			.name(speaker.getName())
+			.description(speaker.getDescription())
 			.build();
 	}
 }

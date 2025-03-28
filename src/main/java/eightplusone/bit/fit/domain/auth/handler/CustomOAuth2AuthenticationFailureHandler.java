@@ -25,6 +25,12 @@ public class CustomOAuth2AuthenticationFailureHandler implements AuthenticationF
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 		AuthenticationException exception) throws IOException {
 		String errorMessage = URLEncoder.encode("social_login_duplicate", StandardCharsets.UTF_8);
-		response.sendRedirect(allowedOrigins + "/signup" + "?error=" + errorMessage);
+		response.sendRedirect(generateRedirect(request.getServerName(), errorMessage));
+	}
+
+	private String generateRedirect(String host, String errorMessage) {
+		String redirectPath = "/signup?error=";
+		return ("localhost".equalsIgnoreCase(host) ? "http://localhost:5173" : allowedOrigins) + redirectPath
+			+ errorMessage;
 	}
 }

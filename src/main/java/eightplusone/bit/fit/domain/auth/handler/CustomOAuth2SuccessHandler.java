@@ -50,7 +50,13 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
 		response.addHeader(HttpHeaders.SET_COOKIE,
 			CookieUtil.createCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken,
 				tokenProvider.getRefreshTokenExpirationSeconds()).toString());
-		response.sendRedirect(allowedOrigins + "/main");
+		response.sendRedirect(generateRedirect(request.getServerName()));
 		log.info("{}-{}: login ({})", email, role, new Date());
 	}
+
+	private String generateRedirect(String host) {
+		String redirectPath = "/main";
+		return ("localhost".equalsIgnoreCase(host) ? "http://localhost:5173" : allowedOrigins) + redirectPath;
+	}
+
 }

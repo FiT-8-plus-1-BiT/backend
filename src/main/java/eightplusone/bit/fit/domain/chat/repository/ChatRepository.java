@@ -13,7 +13,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ChatRepository {
 	private static final Logger log = LoggerFactory.getLogger(ChatRepository.class);
-	private static final String CHAT_LIST_KEY = "chat-";
+	private static final String CHAT_MESSAGE_KEY_PREFIX = "chat-messages:";  // 메시지 저장용
+	private static final String CHAT_SESSION_KEY_PREFIX = "chat-session:";   // 세션 존재 확인용
 	private static final int MAX_CHAT_SIZE = 1000;
 
 	private final RedisTemplate<String, Object> redisTemplate;
@@ -25,14 +26,14 @@ public class ChatRepository {
 	}
 
 	public void createChatSession(String sessionId) {
-		redisTemplate.opsForValue().set("chat-" + sessionId, "active");
+		redisTemplate.opsForValue().set(CHAT_SESSION_KEY_PREFIX + sessionId, "active");
 	}
 
 	// 채팅 메시지 저장
 	public void saveMessage(ChatMessage message) {
-		String chatKey = CHAT_LIST_KEY + message.getSessionId();
-
+		String chatKey = CHAT_MESSAGE_KEY_PREFIX + message.getSessionId();
 		redisTemplate.opsForList().rightPush(chatKey, message);
+
 		Session session = sessionRepository.findById(message.getSessionId()).orElse(null);
 		if (session != null) {
 			long ttlInSeconds = session.getLectureDuration() + Duration.ofMinutes(30).getSeconds();
@@ -52,7 +53,7 @@ public class ChatRepository {
 
 	// 특정 채팅방(sessionId)의 최근 메시지 조회
 	public List<Object> getRecentMessages(String sessionId) {
-		String chatKey = CHAT_LIST_KEY + sessionId;
+		String chatKey = CHAT_MESSAGE_KEY_PREFIX + sessionId;
 		List<Object> messages = redisTemplate.opsForList().range(chatKey, 0, -1);
 
 		// Redis 에서 가져온 데이터 확인 로그 추가
@@ -63,14 +64,13 @@ public class ChatRepository {
 
 	// 특정 채팅방(sessionId) 데이터 삭제
 	public void clearChat(String sessionId) {
-		String chatKey = CHAT_LIST_KEY + sessionId;
+		String chatKey = CHAT_MESSAGE_KEY_PREFIX + sessionId;
 		redisTemplate.delete(chatKey);
 	}
 
 	// 채팅방이 존재하는지 확인
 	public boolean existsBySessionId(String sessionId) {
-		String chatKey = CHAT_LIST_KEY + sessionId;
-		return Boolean.TRUE.equals(redisTemplate.hasKey(chatKey));
+		return Boolean.TRUE.equals(redisTemplate.hasKey(CHAT_SESSION_KEY_PREFIX + sessionId));
 	}
 
 }

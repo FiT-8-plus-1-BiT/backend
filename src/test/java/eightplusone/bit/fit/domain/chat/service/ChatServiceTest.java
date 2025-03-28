@@ -126,7 +126,7 @@ class ChatServiceTest {
 
 		// then
 		verify(chatRepository, times(1)).saveMessage(any(ChatMessage.class));
-		verify(redisTemplate, times(1)).convertAndSend(eq("chat-" + sessionId), any(ChatMessageDto.class));
+		verify(redisTemplate, times(1)).convertAndSend(eq("chat-pub" + sessionId), any(ChatMessageDto.class));
 	}
 
 	// 존재하지 않는 세션에 메시지를 보내면 예외가 발생하는지 확인

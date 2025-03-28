@@ -48,7 +48,7 @@ public class ChatController {
 	}
 
 	@Operation(summary = "메시지 전송", description = "특정 채팅 세션에 메시지를 전송합니다.")
-	@MessageMapping("/chat/{sessionId}")
+	@MessageMapping("/chat-pub/{sessionId}")
 	public void sendMessage(
 		@Parameter(description = "채팅 세션 ID", example = "1234") @DestinationVariable("sessionId") String sessionId,
 		@Payload ChatMessageDto message,

@@ -42,7 +42,7 @@ public class ChatRepositoryTest {
 		chatRepository.clearChat(String.valueOf(sessionId));
 		sessionRepository.deleteAll();
 
-		// ✅ 테스트용 세션 저장 후, 실제 저장된 ID 사용
+		// 테스트용 세션 저장 후, 실제 저장된 ID 사용
 		Session testSession = sessionRepository.save(Session.builder()
 			.title("테스트 세션")
 			.sessionImage("test.jpg")
@@ -56,7 +56,7 @@ public class ChatRepositoryTest {
 		sessionId = testSession.getSessionId(); // 🔹 실제 저장된 ID 가져오기
 
 		// 저장 확인
-		Long count = redisTemplate.opsForList().size("chat-" + sessionId);
+		Long count = redisTemplate.opsForList().size("chat-messages" + sessionId);
 		assertEquals(0, count, "clearChat() 이후에도 메시지가 남아 있음!");
 	}
 
@@ -95,7 +95,7 @@ public class ChatRepositoryTest {
 		}
 
 		// Redis에 저장된 메시지 개수 확인
-		Long messageCount = redisTemplate.opsForList().size("chat-" + sessionId);
+		Long messageCount = redisTemplate.opsForList().size("chat-messages:" + sessionId);
 		System.out.println("현재 Redis 저장된 메시지 개수: " + messageCount);
 
 		// Redis에 1000개만 남아 있는지 확인
@@ -123,7 +123,7 @@ public class ChatRepositoryTest {
 		chatRepository.saveMessage(message);
 
 		// TTL 설정 확인
-		Long ttl = redisTemplate.getExpire("chat-" + session.getSessionId());
+		Long ttl = redisTemplate.getExpire("chat-messages:" + session.getSessionId());
 		assertNotNull(ttl);
 		assertTrue(ttl >= expectedTtl - 10, "TTL이 강연시간 + 30분과 일치하지 않음");
 
@@ -149,13 +149,13 @@ public class ChatRepositoryTest {
 		}
 
 		// Redis에 저장된 메시지 개수 직접 확인
-		Long messageCount = redisTemplate.opsForList().size("chat-" + sessionId);
+		Long messageCount = redisTemplate.opsForList().size("chat-messages" + sessionId);
 		System.out.println("🔍 Redis에 저장된 메시지 개수: " + messageCount);
 		assertNotNull(messageCount);
 		assertEquals(1000, messageCount, "Redis에 저장된 메시지 개수가 1000개가 아님!");
 
 		// Redis에서 가져온 메시지를 Set으로 변환하여 빠르게 비교
-		List<Object> messages = redisTemplate.opsForList().range("chat-" + sessionId, 0, -1);
+		List<Object> messages = redisTemplate.opsForList().range("chat-messages" + sessionId, 0, -1);
 		Set<String> messageSet = messages.stream()
 			.map(Object::toString)
 			.collect(Collectors.toSet());

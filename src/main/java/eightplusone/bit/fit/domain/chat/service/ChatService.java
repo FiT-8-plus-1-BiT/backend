@@ -87,7 +87,7 @@ public class ChatService {
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonMessage = objectMapper.writeValueAsString(message);
-		String redisKey = "chat-" + sessionId;
+		String redisKey = "chat-pub" + sessionId;
 
 		log.info("Redis 발행 메세지 : {} -> {}", redisKey, jsonMessage);
 		redisTemplate.convertAndSend(redisKey, dto);

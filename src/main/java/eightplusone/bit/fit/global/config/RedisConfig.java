@@ -1,5 +1,6 @@
 package eightplusone.bit.fit.global.config;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -9,6 +10,7 @@ import io.lettuce.core.ClientOptions;
 import io.lettuce.core.SocketOptions;
 import io.lettuce.core.TimeoutOptions;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -84,6 +86,11 @@ public class RedisConfig {
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.registerModule(new JavaTimeModule());
 		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+		// 💡 LocalDateTime 직렬화 시 나노초 제거 (기존 오류 해결용)
+		objectMapper.configOverride(LocalDateTime.class)
+			.setFormat(JsonFormat.Value.forPattern("yyyy-MM-dd'T'HH:mm:ss"));
+
 		return objectMapper;
 	}
 

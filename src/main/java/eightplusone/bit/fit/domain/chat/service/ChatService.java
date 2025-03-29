@@ -28,14 +28,17 @@ public class ChatService {
 	private final UserRedisRepository userRedisRepository;
 	private final ChatLikeRepository chatLikeRepository;
 	private final UserRepository userRepository;
+	private final ObjectMapper objectMapper;
 
 	public ChatService(ChatRepository chatRepository, RedisTemplate<String, Object> redisTemplate,
-		UserRedisRepository userRedisRepository, UserRepository userRepository, ChatLikeRepository chatLikeRepository) {
+		UserRedisRepository userRedisRepository, UserRepository userRepository, ChatLikeRepository chatLikeRepository,
+		ObjectMapper objectMapper) {
 		this.chatRepository = chatRepository;
 		this.redisTemplate = redisTemplate;
 		this.userRedisRepository = userRedisRepository;
 		this.chatLikeRepository = chatLikeRepository;
 		this.userRepository = userRepository;
+		this.objectMapper = objectMapper;
 	}
 
 	public void createChatSession(Long sessionId) {
@@ -49,25 +52,20 @@ public class ChatService {
 	}
 
 	public void sendMessageWithEmail(ChatMessageDto dto, String email, Long sessionId) throws JsonProcessingException {
-		if (dto.getMessage() == null || dto.getMessage().trim().isEmpty()) {
+		if (dto.getMessage() == null || dto.getMessage().trim().isEmpty())
 			throw new CustomException(ErrorCode.INVALID_MESSAGE_FORMAT);
-		}
 
-		if (dto.getMessage().length() > 300) {
+		if (dto.getMessage().length() > 300)
 			throw new CustomException(ErrorCode.MESSAGE_TOO_LONG);
-		}
 
-		if (!chatRepository.existsBySessionId(String.valueOf(sessionId))) {
+		if (!chatRepository.existsBySessionId(String.valueOf(sessionId)))
 			throw new CustomException(ErrorCode.CHAT_SESSION_NOT_FOUND);
-		}
 
 		var user = userRepository.findByEmail(email)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
 		String userId = user.getId().toString();
 		String name = user.getName();
-
-		// Redis에 사용자 이름 캐싱
 		userRedisRepository.saveUserName(userId, name);
 
 		ChatMessage message = ChatMessage.builder()
@@ -79,13 +77,11 @@ public class ChatService {
 
 		chatRepository.saveMessage(message);
 
-		// 질문 메시지라면 ZSet에 추가
 		if (message.getCategory() == ChatCategory.QUESTION) {
 			String zsetKey = "questions:session:" + sessionId;
-			redisTemplate.opsForZSet().add(zsetKey, message.getMessageId(), 0); // 초기 좋아요 수 0
+			redisTemplate.opsForZSet().add(zsetKey, message.getMessageId(), 0);
 		}
 
-		ObjectMapper objectMapper = new ObjectMapper();
 		String jsonMessage = objectMapper.writeValueAsString(message);
 		String redisKey = "chat-pub" + sessionId;
 
@@ -251,8 +247,7 @@ public class ChatService {
 					return null;
 
 				try {
-					ObjectMapper mapper = new ObjectMapper();
-					ChatMessage msg = mapper.readValue(raw, ChatMessage.class);
+					ChatMessage msg = objectMapper.readValue(raw, ChatMessage.class);
 					String userName = userRedisRepository.getUserName(msg.getUserId());
 					Double score = redisTemplate.opsForZSet().score(zsetKey, messageId);
 					int likeCount = score != null ? score.intValue() : 0;
@@ -268,6 +263,7 @@ public class ChatService {
 						likeCount
 					);
 				} catch (JsonProcessingException e) {
+					log.error("❌ 메시지 역직렬화 실패: {}", e.getMessage());
 					return null;
 				}
 			})

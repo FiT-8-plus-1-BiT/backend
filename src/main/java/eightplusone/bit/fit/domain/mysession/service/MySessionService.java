@@ -68,9 +68,18 @@ public class MySessionService {
 
 	public List<MySessionLikedSessionsResponseDto> findLikedMySessions(String email) {
 		User user = userRepository.findLoginUserByEmail(email);
-		return mySessionRepository.findSessionsByUserIdAndType(user.getId(), MySessionType.LIKE)
+
+		List<Long> mySessionIds = mySessionRepository.findSessionsByUserIdAndType(user.getId(),
+				MySessionType.LIKE)
 			.stream()
-			.map(mySession -> MySessionLikedSessionsResponseDto.from(mySession.getSession()))
+			.map(mySession -> mySession.getSession().getSessionId())
+			.toList();
+
+		List<Speaker> allSpeakersWithSession = speakerRepository.findAllWithSession();
+
+		return allSpeakersWithSession.stream()
+			.filter(speaker -> mySessionIds.contains(speaker.getSession().getSessionId()))
+			.map(MySessionLikedSessionsResponseDto::from)
 			.collect(Collectors.toList());
 	}
 

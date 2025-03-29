@@ -2,7 +2,7 @@ package eightplusone.bit.fit.domain.mysession.dto;
 
 import java.time.format.DateTimeFormatter;
 
-import eightplusone.bit.fit.domain.session.entity.Session;
+import eightplusone.bit.fit.domain.speaker.entity.Speaker;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,25 +20,33 @@ public class MySessionLikedSessionsResponseDto {
 	private final String startTime;
 	@Schema(description = "강연 종료 시간", example = "202504021050")
 	private final String endTime;
+	@Schema(description = "강연자 이름", example = "홍길동")
+	private final String speakerName;
+	@Schema(description = "강연자 이미지", example = "http://localhost:8080/speaker.png")
+	private final String speakerImage;
 
 	@Builder
 	private MySessionLikedSessionsResponseDto(Long sessionId, String title, String summary, String startTime,
-		String endTime) {
+		String endTime, String speakerName, String speakerImage) {
 		this.sessionId = sessionId;
 		this.title = title;
 		this.summary = summary;
 		this.startTime = startTime;
 		this.endTime = endTime;
+		this.speakerName = speakerName;
+		this.speakerImage = speakerImage;
 	}
 
-	public static MySessionLikedSessionsResponseDto from(Session session) {
+	public static MySessionLikedSessionsResponseDto from(Speaker speaker) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMddHHmm");
 		return MySessionLikedSessionsResponseDto.builder()
-			.sessionId(session.getSessionId())
-			.title(session.getTitle())
-			.summary(session.getSummary())
-			.startTime(session.getStartTime().format(formatter))
-			.endTime(session.getEndTime().format(formatter))
+			.sessionId(speaker.getSession().getSessionId())
+			.title(speaker.getSession().getTitle())
+			.summary(speaker.getSession().getSummary())
+			.startTime(speaker.getSession().getStartTime().format(formatter))
+			.endTime(speaker.getSession().getEndTime().format(formatter))
+			.speakerName(speaker.getName())
+			.speakerImage(speaker.getImage())
 			.build();
 	}
 }

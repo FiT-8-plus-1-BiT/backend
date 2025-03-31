@@ -33,10 +33,12 @@ import eightplusone.bit.fit.global.exception.CustomException;
 import eightplusone.bit.fit.global.exception.ErrorCode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class SessionService {
 
 	private final RedisTemplate<String, Object> redisTemplate;
@@ -68,6 +70,8 @@ public class SessionService {
 					double percent = getCongestionPercent(session.getAudioChannel());
 					String level = getCongestionLevel(percent);
 
+					log.info("혼잡도 계산 - 채널 {}: {}% ({})", session.getAudioChannel(), percent, level);
+
 					hashOps.put(SESSION_CONGESTION_KEY, session.getAudioChannel().toString(), level);
 
 					return Map.of("percent", percent, "level", level);
@@ -78,7 +82,10 @@ public class SessionService {
 	// 혼잡도 퍼센트
 	private double getCongestionPercent(Integer audioChannel) {
 		Session session = sessionRepository.findByAudioChannel(audioChannel)
-			.orElseThrow(() -> new EntityNotFoundException(audioChannel + "에 해당하는 세션을 찾을 수 없습니다."));
+			.orElseThrow(() -> {
+				log.error("해당 세션 없음: {}", audioChannel);
+				return new EntityNotFoundException(audioChannel + "에 해당하는 세션을 찾을 수 없습니다.");
+			});
 
 		long connectedUsers = redisTemplate.opsForHash()
 			.values(SESSION_USER_KEY)

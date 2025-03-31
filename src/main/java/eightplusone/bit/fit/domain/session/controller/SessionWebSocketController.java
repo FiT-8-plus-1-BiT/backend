@@ -20,8 +20,12 @@ public class SessionWebSocketController {
 
 	@Scheduled(fixedRate = 30000)
 	public void broadcastSessionUpdate() {
-		Map<Integer, Map<String, Object>> sessionData = sessionService.getUpdatedSessionData();
-		log.info("send congestion data : {}", sessionData.toString());
-		messagingTemplate.convertAndSend("/sub/session", sessionData);
+		try {
+			Map<Integer, Map<String, Object>> sessionData = sessionService.getUpdatedSessionData();
+			log.info("send congestion data : {}", sessionData.toString());
+			messagingTemplate.convertAndSend("/sub/session", sessionData);
+		} catch (Exception e) {
+			log.error("혼잡도 전송 중 예외 발생 : {}", e.getMessage());
+		}
 	}
 }

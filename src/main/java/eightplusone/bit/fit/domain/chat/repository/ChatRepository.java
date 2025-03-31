@@ -1,5 +1,6 @@
 package eightplusone.bit.fit.domain.chat.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eightplusone.bit.fit.domain.chat.entity.ChatMessage;
 import eightplusone.bit.fit.domain.session.entity.Session;
 import eightplusone.bit.fit.domain.session.repository.SessionRepository;
@@ -19,10 +20,13 @@ public class ChatRepository {
 
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final SessionRepository sessionRepository;
+	private final ObjectMapper objectMapper;
 
-	public ChatRepository(RedisTemplate<String, Object> redisTemplate, SessionRepository sessionRepository) {
+	public ChatRepository(RedisTemplate<String, Object> redisTemplate, SessionRepository sessionRepository,
+		ObjectMapper objectMapper) {
 		this.redisTemplate = redisTemplate;
 		this.sessionRepository = sessionRepository;
+		this.objectMapper = objectMapper;
 	}
 
 	public void createChatSession(String sessionId) {

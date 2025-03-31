@@ -35,6 +35,12 @@ public class ChatSubscriber implements MessageListener {
 			String channel = new String(message.getChannel(), StandardCharsets.UTF_8);
 			log.info("Redis에서 메시지 수신: 채널={}, 메시지={}", channel, raw);
 
+			// 채널 확인: chat-pub:로 시작하는 경우에만 처리
+			if (!channel.startsWith("chat-pub:")) {
+				log.info("❌ chat-pub 채널이 아니므로 무시: {}", channel);
+				return;
+			}
+
 			ChatMessageDto dto = objectMapper.readValue(raw, ChatMessageDto.class);
 
 			if (dto.getMessageId() == null) {

@@ -343,9 +343,9 @@ class ChatServiceTest {
 		ChatMessage m2 = new ChatMessage("msg2", sessionId, "user2", ChatCategory.QUESTION, "Q2", LocalDateTime.now());
 		ChatMessage m3 = new ChatMessage("msg3", sessionId, "user3", ChatCategory.QUESTION, "Q3", LocalDateTime.now());
 
-		when(valueOps.get("chat:message:msg1")).thenReturn(mapper.writeValueAsString(m1));
-		when(valueOps.get("chat:message:msg2")).thenReturn(mapper.writeValueAsString(m2));
-		when(valueOps.get("chat:message:msg3")).thenReturn(mapper.writeValueAsString(m3));
+		when(valueOps.get("chat-message:msg1")).thenReturn(mapper.writeValueAsString(m1));
+		when(valueOps.get("chat-message:msg2")).thenReturn(mapper.writeValueAsString(m2));
+		when(valueOps.get("chat-message:msg3")).thenReturn(mapper.writeValueAsString(m3));
 
 		when(userRedisRepository.getUserName("user1")).thenReturn("User1");
 		when(userRedisRepository.getUserName("user2")).thenReturn("User2");

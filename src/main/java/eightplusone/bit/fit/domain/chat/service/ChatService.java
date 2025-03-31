@@ -262,7 +262,7 @@ public class ChatService {
 		return messageIds.stream()
 			.map(messageIdObj -> {
 				String messageId = messageIdObj.toString().replace("\"", "");
-				String raw = (String)redisTemplate.opsForValue().get("chat-message:" + messageId);
+				String raw = (String)redisTemplate.opsForValue().get("chat-messages:" + messageId);
 				if (raw == null) {
 					log.warn("⚠️ 메시지를 찾을 수 없습니다. messageId: {}", messageId);
 					return null;

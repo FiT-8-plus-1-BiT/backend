@@ -36,23 +36,38 @@ public class ChatRepository {
 	// 채팅 메시지 저장
 	public void saveMessage(ChatMessage message) {
 		String chatKey = CHAT_MESSAGE_KEY_PREFIX + message.getSessionId();
-		redisTemplate.opsForList().rightPush(chatKey, message);
+		String messageKey = "chat-messages:" + message.getMessageId();
 
-		Session session = sessionRepository.findById(message.getSessionId()).orElse(null);
-		if (session != null) {
-			long ttlInSeconds = session.getLectureDuration() + Duration.ofMinutes(30).getSeconds();
+		try {
+			// 1. 리스트에 저장
+			redisTemplate.opsForList().rightPush(chatKey, message);
 
-			Boolean expireResult = redisTemplate.expire(chatKey, Duration.ofSeconds(ttlInSeconds));
-			log.info("🔍 TTL 적용 결과 (true: 성공, false: 실패): {}", expireResult);
+			// 2. messageId 기준으로 개별 저장
+			String jsonMessage = objectMapper.writeValueAsString(message);
+			redisTemplate.opsForValue().set(messageKey, jsonMessage);
 
-			Long ttl = redisTemplate.getExpire(chatKey);
-			log.info("🔍 현재 TTL 값 (초 단위): {}", ttl);
-		} else {
-			log.warn("🚨 세션 정보를 찾을 수 없어 TTL을 설정하지 못했습니다. sessionId: {}", message.getSessionId());
+			// 3. TTL 설정
+			Session session = sessionRepository.findById(message.getSessionId()).orElse(null);
+			if (session != null) {
+				long ttlInSeconds = session.getLectureDuration() + Duration.ofMinutes(30).getSeconds();
+
+				Boolean expireResult = redisTemplate.expire(chatKey, Duration.ofSeconds(ttlInSeconds));
+				log.info("🔍 TTL 적용 결과 (true: 성공, false: 실패): {}", expireResult);
+
+				Long ttl = redisTemplate.getExpire(chatKey);
+				log.info("🔍 현재 TTL 값 (초 단위): {}", ttl);
+
+				// messageId 기준 저장된 데이터에도 동일 TTL 적용
+				redisTemplate.expire(messageKey, Duration.ofSeconds(ttlInSeconds));
+			} else {
+				log.warn("🚨 세션 정보를 찾을 수 없어 TTL을 설정하지 못했습니다. sessionId: {}", message.getSessionId());
+			}
+
+			// 4. 리스트 크기 유지
+			redisTemplate.opsForList().trim(chatKey, -MAX_CHAT_SIZE, -1);
+		} catch (Exception e) {
+			log.error("❌ 메시지 저장 중 오류 발생", e);
 		}
-
-		// 리스트 크기를 1000개로 유지하도록 `trim()` 적용
-		redisTemplate.opsForList().trim(chatKey, -MAX_CHAT_SIZE, -1);
 	}
 
 	// 특정 채팅방(sessionId)의 최근 메시지 조회

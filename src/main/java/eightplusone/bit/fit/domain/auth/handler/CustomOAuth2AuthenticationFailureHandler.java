@@ -11,7 +11,9 @@ import org.springframework.stereotype.Component;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class CustomOAuth2AuthenticationFailureHandler implements AuthenticationFailureHandler {
 
@@ -25,10 +27,14 @@ public class CustomOAuth2AuthenticationFailureHandler implements AuthenticationF
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 		AuthenticationException exception) throws IOException {
 		String errorMessage = URLEncoder.encode("social_login_duplicate", StandardCharsets.UTF_8);
+		log.info("소셜 로그인 URL 체크: " + request.getRequestURI());
+		log.info("Origins 체크: " + allowedOrigins);
 		if (request.getRequestURI().contains("google")) {
 			response.sendRedirect("http://localhost:5173/signup?error=" + errorMessage);
+			log.info("//==로컬 이용==//");
 		} else {
 			response.sendRedirect(allowedOrigins + "/signup" + "?error=" + errorMessage);
+			log.info("//==Origin 이용==//");
 		}
 	}
 }

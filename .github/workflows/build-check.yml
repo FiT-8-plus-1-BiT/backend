@@ -18,6 +18,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: fit
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
         ports:
           - 3306:3306
         options: >-
@@ -48,22 +50,20 @@ jobs:
 
       - name: Set environment variables
         run: |
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "MYSQL_HOST=localhost" >> $GITHUB_ENV
+          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE=fit" >> $GITHUB_ENV
           echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> $GITHUB_ENV
           echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> $GITHUB_ENV
-          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "REDIS_HOST=localhost" >> $GITHUB_ENV
+          echo "REDIS_PORT=6379" >> $GITHUB_ENV
+          echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> $GITHUB_ENV
 
-      - name: Verify environment variables
+      - name: Verify database connection
         run: |
-          echo "Active Profile: $SPRING_PROFILES_ACTIVE"
-
-      - name: Initialize MySQL User
-        run: |
-          docker exec $(docker ps -qf "ancestor=mysql:8.0") \
-          mysql -u root -proot -e "CREATE USER IF NOT EXISTS '${{ secrets.MYSQL_USER }}'@'%' IDENTIFIED BY '${{ secrets.MYSQL_PASSWORD }}';"
-          docker exec $(docker ps -qf "ancestor=mysql:8.0") \
-          mysql -u root -proot -e "GRANT ALL PRIVILEGES ON fit.* TO '${{ secrets.MYSQL_USER }}'@'%';"
-          docker exec $(docker ps -qf "ancestor=mysql:8.0") \
-          mysql -u root -proot -e "FLUSH PRIVILEGES;"
+          sudo apt-get install -y mysql-client
+          mysql -h 127.0.0.1 -u ${{ secrets.MYSQL_USER }} -p ${{ secrets.MYSQL_PASSWORD }} -e "SHOW DATABASES;"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -78,10 +78,10 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
-      - name: Setup Gradle (Cache Disabled)
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-disabled: true
+          gradle-version: wrapper
 
       - name: Grant execute permission to gradlew
         run: chmod +x ./gradlew
@@ -89,7 +89,19 @@ jobs:
       - name: Start Kurento Media Server
         run: |
           docker run -d --name kurento-server -p 8888:8888 kurento/kurento-media-server
-          sleep 10
+          echo "Waiting for Kurento Media Server to start..."
+          sleep 30
+          docker ps | grep kurento
 
       - name: Build & Run Tests
-        run: ./gradlew clean build test
+        run: |
+          ./gradlew clean build test --info
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          MYSQL_HOST: localhost
+          MYSQL_PORT: 3306
+          MYSQL_DATABASE: fit
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          KURENTO_URL: ws://localhost:8888/kurento
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}

@@ -25,10 +25,10 @@ public class CustomOAuth2AuthenticationFailureHandler implements AuthenticationF
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 		AuthenticationException exception) throws IOException {
 		String errorMessage = URLEncoder.encode("social_login_duplicate", StandardCharsets.UTF_8);
-		if (request.getRequestURI().contains("naver")) {
-			response.sendRedirect(allowedOrigins + "/signup" + "?error=" + errorMessage);
-		} else {
+		if (request.getRequestURI().contains("google")) {
 			response.sendRedirect("http://localhost:5173/signup?error=" + errorMessage);
+		} else {
+			response.sendRedirect(allowedOrigins + "/signup" + "?error=" + errorMessage);
 		}
 	}
 }

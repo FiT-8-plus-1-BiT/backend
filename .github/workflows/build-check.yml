@@ -95,7 +95,7 @@ jobs:
 
       - name: Build & Run Tests
         run: |
-          ./gradlew clean build test --info
+          ./gradlew clean build test
         env:
           SPRING_PROFILES_ACTIVE: test
           MYSQL_HOST: localhost

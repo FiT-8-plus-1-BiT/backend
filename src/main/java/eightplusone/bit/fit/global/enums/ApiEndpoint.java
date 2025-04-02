@@ -27,6 +27,7 @@ public enum ApiEndpoint {
 	AUTHENTICATED_GET(HttpMethod.GET, new String[] {
 		"/api/v1/users/account",
 		"/api/v1/users/profile",
+		"/api/v1/users/profile/image",
 		"/api/v1/users/sessions",
 		"/api/v1/users/sessions/like"
 	}),
@@ -40,7 +41,8 @@ public enum ApiEndpoint {
 	}),
 
 	AUTHENTICATED_PUT(HttpMethod.PUT, new String[] {
-		"/api/v1/users/profile"
+		"/api/v1/users/profile",
+		"/api/v1/users/profile/image"
 	}),
 
 	AUTHENTICATED_PATCH(HttpMethod.PATCH, new String[] {
@@ -48,6 +50,7 @@ public enum ApiEndpoint {
 
 	AUTHENTICATED_DELETE(HttpMethod.DELETE, new String[] {
 		"/api/v1/users",
+		"/api/v1/users/profile/image",
 		"/api/v1/users/sessions",
 		"/api/v1/users/sessions/like"
 	});

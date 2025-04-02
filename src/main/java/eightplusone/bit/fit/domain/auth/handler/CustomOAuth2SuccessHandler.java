@@ -50,14 +50,10 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
 		response.addHeader(HttpHeaders.SET_COOKIE,
 			CookieUtil.createCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken,
 				tokenProvider.getRefreshTokenExpirationSeconds()).toString());
-		log.info("소셜 로그인 URL 체크: " + request.getRequestURI());
-		log.info("Origins 체크: " + allowedOrigins);
 		if (request.getRequestURI().contains("google")) {
-			log.info("//==로컬 이용==//");
 			response.sendRedirect("http://localhost:5173/main");
 		} else {
 			response.sendRedirect(allowedOrigins + "/main");
-			log.info("//==Origin 이용==//");
 		}
 		log.info("{}-{}: login ({})", email, role, new Date());
 	}

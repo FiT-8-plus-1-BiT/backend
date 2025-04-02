@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eightplusone.bit.fit.domain.chat.enums.ChatCategory;
 import java.time.LocalDateTime;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,6 +20,7 @@ public class ChatMessageDto {
 	private LocalDateTime timestamp;
 	private int likes;
 
+	@Builder
 	@JsonCreator
 	public ChatMessageDto(
 		@JsonProperty("messageId") String messageId,

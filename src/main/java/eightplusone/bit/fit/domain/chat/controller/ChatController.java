@@ -62,10 +62,10 @@ public class ChatController {
 		@ApiResponse(responseCode = "200", description = "성공적으로 메시지를 반환함")
 	})
 	@GetMapping("/{sessionId}/messages")
-	public ResponseEntity<List<Object>> getRecentMessages(
+	public ResponseEntity<List<ChatMessageDto>> getRecentMessages(
 		@Parameter(description = "채팅 세션 ID", example = "1234") @PathVariable String sessionId
 	) {
-		List<Object> messages = chatService.getRecentMessages(sessionId);
+		List<ChatMessageDto> messages = chatService.getRecentMessages(sessionId);
 		return ResponseEntity.ok(messages);
 	}
 

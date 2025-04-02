@@ -247,12 +247,23 @@ class ChatServiceTest {
 	// 특정 채팅방의 최근 메시지를 정상적으로 조회할 수 있는지 확인
 	@Test
 	void getRecentMessages_success() {
+		Long sessionId = 1L;
+
 		when(chatRepository.existsBySessionId(String.valueOf(sessionId))).thenReturn(true);
 		when(chatRepository.getRecentMessages(String.valueOf(sessionId))).thenReturn(List.of(chatMessage));
 
-		List<Object> messages = chatService.getRecentMessages(String.valueOf(sessionId));
+		ZSetOperations<String, Object> zSetOps = mock(ZSetOperations.class);
+		when(redisTemplate.opsForZSet()).thenReturn(zSetOps);
+		when(zSetOps.score("questions:session:" + sessionId, chatMessage.getMessageId())).thenReturn(0.0);
+
+		when(userRedisRepository.getUserName(chatMessage.getUserId())).thenReturn("테스터");
+
+		List<ChatMessageDto> messages = chatService.getRecentMessages(String.valueOf(sessionId));
 
 		assertThat(messages).isNotEmpty();
+		assertThat(messages.get(0).getName()).isEqualTo("테스터");
+		assertThat(messages.get(0).getLikes()).isEqualTo(0);
+
 		verify(chatRepository, times(1)).getRecentMessages(String.valueOf(sessionId));
 	}
 
